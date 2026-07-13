@@ -1,0 +1,5 @@
+node_modules/
+dist/
+public/ui/*.json
+*.log
+package-lock.json

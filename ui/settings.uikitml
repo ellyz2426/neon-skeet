@@ -1,0 +1,116 @@
+<panel>
+  <style>
+    .root {
+      width: 500;
+      background-color: rgba(5, 5, 20, 0.95);
+      border-radius: 16;
+      padding: 24;
+      flex-direction: column;
+      align-items: center;
+      gap: 14;
+      border-color: #888899;
+      border-width: 2;
+    }
+    .title {
+      font-size: 32;
+      color: #ffffff;
+      font-weight: bold;
+    }
+    .section-title {
+      font-size: 20;
+      color: #00ccff;
+      font-weight: bold;
+      margin-top: 8;
+    }
+    .diff-row {
+      flex-direction: row;
+      gap: 10;
+    }
+    .diff-btn {
+      width: 100;
+      height: 40;
+      background-color: #333355;
+      border-radius: 8;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      border-color: #555577;
+      border-width: 1;
+    }
+    .diff-text {
+      font-size: 15;
+      color: #ccccee;
+    }
+    .vol-row {
+      flex-direction: row;
+      gap: 12;
+      align-items: center;
+    }
+    .vol-btn {
+      width: 44;
+      height: 44;
+      background-color: #1a1a3e;
+      border-radius: 22;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      border-color: #00ccff;
+      border-width: 1;
+    }
+    .vol-text {
+      font-size: 24;
+      color: #00ccff;
+    }
+    .vol-val {
+      font-size: 18;
+      color: #ffffff;
+    }
+    .back-btn {
+      width: 200;
+      height: 44;
+      background-color: #1a1a3e;
+      border-radius: 8;
+      justify-content: center;
+      align-items: center;
+      border-color: #666688;
+      border-width: 1;
+      cursor: pointer;
+      margin-top: 12;
+    }
+    .back-text {
+      font-size: 18;
+      color: #888899;
+    }
+  </style>
+  <container class="root">
+    <text class="title">SETTINGS</text>
+    <text class="section-title">Difficulty</text>
+    <container class="diff-row">
+      <container class="diff-btn" name="diff-easy">
+        <text class="diff-text">Easy</text>
+      </container>
+      <container class="diff-btn" name="diff-medium">
+        <text class="diff-text">Medium</text>
+      </container>
+      <container class="diff-btn" name="diff-hard">
+        <text class="diff-text">Hard</text>
+      </container>
+      <container class="diff-btn" name="diff-expert">
+        <text class="diff-text">Expert</text>
+      </container>
+    </container>
+    <text class="section-title">Sound Effects</text>
+    <container class="vol-row">
+      <container class="vol-btn" name="sfx-down">
+        <text class="vol-text">-</text>
+      </container>
+      <text class="vol-val" name="sfx-val">70%</text>
+      <container class="vol-btn" name="sfx-up">
+        <text class="vol-text">+</text>
+      </container>
+    </container>
+    <container class="back-btn" name="btn-back-settings">
+      <text class="back-text">BACK</text>
+    </container>
+  </container>
+</panel>

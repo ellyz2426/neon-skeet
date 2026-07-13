@@ -1,0 +1,89 @@
+<panel>
+  <style>
+    .root {
+      width: 400;
+      background-color: rgba(5, 5, 20, 0.85);
+      border-radius: 12;
+      padding: 16;
+      flex-direction: column;
+      gap: 6;
+      border-color: #00ccff;
+      border-width: 1;
+    }
+    .top-row {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .score-label {
+      font-size: 14;
+      color: #888899;
+    }
+    .score-val {
+      font-size: 28;
+      color: #00ff88;
+      font-weight: bold;
+    }
+    .streak-val {
+      font-size: 22;
+      color: #ffaa00;
+      font-weight: bold;
+    }
+    .mid-row {
+      flex-direction: row;
+      justify-content: space-between;
+    }
+    .info-text {
+      font-size: 14;
+      color: #aaaacc;
+    }
+    .timer-text {
+      font-size: 20;
+      color: #ff4400;
+      font-weight: bold;
+    }
+    .pull-text {
+      font-size: 24;
+      color: #00ff88;
+      font-weight: bold;
+    }
+    .wind-text {
+      font-size: 12;
+      color: #666688;
+    }
+    .stat-row {
+      flex-direction: row;
+      gap: 20;
+    }
+    .hit-text {
+      font-size: 14;
+      color: #00ff88;
+    }
+    .miss-text {
+      font-size: 14;
+      color: #ff4444;
+    }
+  </style>
+  <container class="root">
+    <container class="top-row">
+      <container>
+        <text class="score-label">SCORE</text>
+        <text class="score-val" name="score-val">0</text>
+      </container>
+      <container>
+        <text class="score-label">STREAK</text>
+        <text class="streak-val" name="streak-val">0</text>
+      </container>
+    </container>
+    <container class="mid-row">
+      <text class="info-text" name="station-val">Station 1/5</text>
+      <text class="info-text" name="pigeon-val">1/25</text>
+    </container>
+    <text class="timer-text" name="timer-val"></text>
+    <container class="stat-row">
+      <text class="hit-text" name="hits-val">Hits: 0</text>
+      <text class="miss-text" name="misses-val">Misses: 0</text>
+    </container>
+    <text class="wind-text" name="wind-val">No Wind</text>
+  </container>
+</panel>

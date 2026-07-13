@@ -1,0 +1,85 @@
+<panel>
+  <style>
+    .root {
+      width: 700;
+      background-color: rgba(5, 5, 20, 0.95);
+      border-radius: 16;
+      padding: 24;
+      flex-direction: column;
+      align-items: center;
+      gap: 12;
+      border-color: #ff6600;
+      border-width: 2;
+    }
+    .title {
+      font-size: 32;
+      color: #ff6600;
+      font-weight: bold;
+    }
+    .mode-btn {
+      width: 600;
+      height: 70;
+      background-color: #1a1a3e;
+      border-radius: 10;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 8;
+      border-color: #ff6600;
+      border-width: 1;
+      cursor: pointer;
+      hover-background-color: #2a2a5e;
+    }
+    .mode-name {
+      font-size: 22;
+      color: #ff8800;
+      font-weight: bold;
+    }
+    .mode-desc {
+      font-size: 13;
+      color: #888899;
+    }
+    .back-btn {
+      width: 200;
+      height: 44;
+      background-color: #1a1a3e;
+      border-radius: 8;
+      justify-content: center;
+      align-items: center;
+      border-color: #666688;
+      border-width: 1;
+      cursor: pointer;
+      margin-top: 8;
+    }
+    .back-text {
+      font-size: 18;
+      color: #888899;
+    }
+  </style>
+  <container class="root">
+    <text class="title">SELECT MODE</text>
+    <container class="mode-btn" name="mode-trap">
+      <text class="mode-name">Trap</text>
+      <text class="mode-desc">Classic 25-target trap. 5 stations, 5 targets each.</text>
+    </container>
+    <container class="mode-btn" name="mode-double_trap">
+      <text class="mode-name">Double Trap</text>
+      <text class="mode-desc">Two targets launched at once. Hit both!</text>
+    </container>
+    <container class="mode-btn" name="mode-skeet">
+      <text class="mode-name">Skeet</text>
+      <text class="mode-desc">Crossing targets from high and low houses. 8 stations.</text>
+    </container>
+    <container class="mode-btn" name="mode-speed">
+      <text class="mode-name">Speed Round</text>
+      <text class="mode-desc">Rapid fire! Targets accelerate. 90 second time limit.</text>
+    </container>
+    <container class="mode-btn" name="mode-sporting">
+      <text class="mode-name">Sporting Clays</text>
+      <text class="mode-desc">Varied trajectories from all directions.</text>
+    </container>
+    <container class="back-btn" name="btn-back">
+      <text class="back-text">BACK</text>
+    </container>
+  </container>
+</panel>

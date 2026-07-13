@@ -1,0 +1,80 @@
+<panel>
+  <style>
+    .root {
+      width: 550;
+      height: 600;
+      background-color: rgba(5, 5, 20, 0.95);
+      border-radius: 16;
+      padding: 20;
+      flex-direction: column;
+      align-items: center;
+      gap: 6;
+      border-color: #ffaa00;
+      border-width: 2;
+      overflow: scroll;
+    }
+    .title {
+      font-size: 28;
+      color: #ffaa00;
+      font-weight: bold;
+    }
+    .ach-item {
+      width: 480;
+      flex-direction: column;
+      padding: 8;
+      border-radius: 6;
+      background-color: #1a1a2e;
+    }
+    .ach-name {
+      font-size: 16;
+      color: #ffcc00;
+      font-weight: bold;
+    }
+    .ach-desc {
+      font-size: 12;
+      color: #888899;
+    }
+    .back-btn {
+      width: 200;
+      height: 40;
+      background-color: #1a1a3e;
+      border-radius: 8;
+      justify-content: center;
+      align-items: center;
+      border-color: #666688;
+      border-width: 1;
+      cursor: pointer;
+      margin-top: 8;
+    }
+    .back-text {
+      font-size: 16;
+      color: #888899;
+    }
+  </style>
+  <container class="root">
+    <text class="title">ACHIEVEMENTS</text>
+    <container class="ach-item" name="ach-0-bg"><text class="ach-name" name="ach-0-name">???</text><text class="ach-desc" name="ach-0-desc">Locked</text></container>
+    <container class="ach-item" name="ach-1-bg"><text class="ach-name" name="ach-1-name">???</text><text class="ach-desc" name="ach-1-desc">Locked</text></container>
+    <container class="ach-item" name="ach-2-bg"><text class="ach-name" name="ach-2-name">???</text><text class="ach-desc" name="ach-2-desc">Locked</text></container>
+    <container class="ach-item" name="ach-3-bg"><text class="ach-name" name="ach-3-name">???</text><text class="ach-desc" name="ach-3-desc">Locked</text></container>
+    <container class="ach-item" name="ach-4-bg"><text class="ach-name" name="ach-4-name">???</text><text class="ach-desc" name="ach-4-desc">Locked</text></container>
+    <container class="ach-item" name="ach-5-bg"><text class="ach-name" name="ach-5-name">???</text><text class="ach-desc" name="ach-5-desc">Locked</text></container>
+    <container class="ach-item" name="ach-6-bg"><text class="ach-name" name="ach-6-name">???</text><text class="ach-desc" name="ach-6-desc">Locked</text></container>
+    <container class="ach-item" name="ach-7-bg"><text class="ach-name" name="ach-7-name">???</text><text class="ach-desc" name="ach-7-desc">Locked</text></container>
+    <container class="ach-item" name="ach-8-bg"><text class="ach-name" name="ach-8-name">???</text><text class="ach-desc" name="ach-8-desc">Locked</text></container>
+    <container class="ach-item" name="ach-9-bg"><text class="ach-name" name="ach-9-name">???</text><text class="ach-desc" name="ach-9-desc">Locked</text></container>
+    <container class="ach-item" name="ach-10-bg"><text class="ach-name" name="ach-10-name">???</text><text class="ach-desc" name="ach-10-desc">Locked</text></container>
+    <container class="ach-item" name="ach-11-bg"><text class="ach-name" name="ach-11-name">???</text><text class="ach-desc" name="ach-11-desc">Locked</text></container>
+    <container class="ach-item" name="ach-12-bg"><text class="ach-name" name="ach-12-name">???</text><text class="ach-desc" name="ach-12-desc">Locked</text></container>
+    <container class="ach-item" name="ach-13-bg"><text class="ach-name" name="ach-13-name">???</text><text class="ach-desc" name="ach-13-desc">Locked</text></container>
+    <container class="ach-item" name="ach-14-bg"><text class="ach-name" name="ach-14-name">???</text><text class="ach-desc" name="ach-14-desc">Locked</text></container>
+    <container class="ach-item" name="ach-15-bg"><text class="ach-name" name="ach-15-name">???</text><text class="ach-desc" name="ach-15-desc">Locked</text></container>
+    <container class="ach-item" name="ach-16-bg"><text class="ach-name" name="ach-16-name">???</text><text class="ach-desc" name="ach-16-desc">Locked</text></container>
+    <container class="ach-item" name="ach-17-bg"><text class="ach-name" name="ach-17-name">???</text><text class="ach-desc" name="ach-17-desc">Locked</text></container>
+    <container class="ach-item" name="ach-18-bg"><text class="ach-name" name="ach-18-name">???</text><text class="ach-desc" name="ach-18-desc">Locked</text></container>
+    <container class="ach-item" name="ach-19-bg"><text class="ach-name" name="ach-19-name">???</text><text class="ach-desc" name="ach-19-desc">Locked</text></container>
+    <container class="back-btn" name="btn-back-ach">
+      <text class="back-text">BACK</text>
+    </container>
+  </container>
+</panel>

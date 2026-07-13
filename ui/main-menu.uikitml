@@ -1,0 +1,68 @@
+<panel>
+  <style>
+    .root {
+      width: 600;
+      background-color: rgba(5, 5, 20, 0.95);
+      border-radius: 16;
+      padding: 30;
+      flex-direction: column;
+      align-items: center;
+      gap: 16;
+      border-color: #00ccff;
+      border-width: 2;
+    }
+    .title {
+      font-size: 48;
+      color: #00ccff;
+      font-weight: bold;
+    }
+    .subtitle {
+      font-size: 18;
+      color: #888899;
+    }
+    .btn {
+      width: 320;
+      height: 56;
+      background-color: #1a1a3e;
+      border-radius: 10;
+      justify-content: center;
+      align-items: center;
+      border-color: #00ccff;
+      border-width: 1;
+      cursor: pointer;
+      hover-background-color: #2a2a5e;
+    }
+    .btn-text {
+      font-size: 22;
+      color: #00ccff;
+      font-weight: bold;
+    }
+    .stats-row {
+      flex-direction: row;
+      gap: 20;
+      margin-top: 10;
+    }
+    .stat {
+      font-size: 14;
+      color: #666688;
+    }
+  </style>
+  <container class="root">
+    <text class="title">NEON SKEET</text>
+    <text class="subtitle">Clay Pigeon Shooting</text>
+    <container class="btn" name="btn-play">
+      <text class="btn-text">PLAY</text>
+    </container>
+    <container class="btn" name="btn-settings">
+      <text class="btn-text">SETTINGS</text>
+    </container>
+    <container class="btn" name="btn-achievements">
+      <text class="btn-text">ACHIEVEMENTS</text>
+    </container>
+    <container class="stats-row">
+      <text class="stat" name="total-score">Total Hits: 0</text>
+      <text class="stat" name="total-rounds">Rounds: 0</text>
+      <text class="stat" name="ach-count">0/20</text>
+    </container>
+  </container>
+</panel>

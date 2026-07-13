@@ -1,0 +1,107 @@
+<panel>
+  <style>
+    .root {
+      width: 500;
+      background-color: rgba(5, 5, 20, 0.95);
+      border-radius: 16;
+      padding: 28;
+      flex-direction: column;
+      align-items: center;
+      gap: 14;
+      border-color: #00ff88;
+      border-width: 2;
+    }
+    .title {
+      font-size: 36;
+      color: #00ff88;
+      font-weight: bold;
+    }
+    .row {
+      width: 400;
+      flex-direction: row;
+      justify-content: space-between;
+      padding-left: 10;
+      padding-right: 10;
+    }
+    .label {
+      font-size: 18;
+      color: #888899;
+    }
+    .value {
+      font-size: 18;
+      color: #ffffff;
+      font-weight: bold;
+    }
+    .score-big {
+      font-size: 48;
+      color: #ffaa00;
+      font-weight: bold;
+    }
+    .btn-row {
+      flex-direction: row;
+      gap: 16;
+      margin-top: 12;
+    }
+    .btn {
+      width: 180;
+      height: 48;
+      background-color: #1a3322;
+      border-radius: 8;
+      justify-content: center;
+      align-items: center;
+      border-color: #00ff88;
+      border-width: 1;
+      cursor: pointer;
+    }
+    .btn-sec {
+      width: 180;
+      height: 48;
+      background-color: #1a1a3e;
+      border-radius: 8;
+      justify-content: center;
+      align-items: center;
+      border-color: #666688;
+      border-width: 1;
+      cursor: pointer;
+    }
+    .btn-text {
+      font-size: 18;
+      color: #00ff88;
+      font-weight: bold;
+    }
+    .btn-text-sec {
+      font-size: 18;
+      color: #888899;
+    }
+  </style>
+  <container class="root">
+    <text class="title">ROUND COMPLETE</text>
+    <text class="label" name="sc-mode">Trap</text>
+    <text class="label" name="sc-difficulty">Medium</text>
+    <text class="score-big" name="sc-score">0</text>
+    <container class="row">
+      <text class="label">Hits</text>
+      <text class="value" name="sc-hits">0/25</text>
+    </container>
+    <container class="row">
+      <text class="label">Accuracy</text>
+      <text class="value" name="sc-accuracy">0%</text>
+    </container>
+    <container class="row">
+      <text class="label">Best Streak</text>
+      <text class="value" name="sc-streak">0</text>
+    </container>
+    <container class="row">
+      <text class="label">First Shots Only</text>
+      <text class="value" name="sc-first-shots">No</text>
+    </container>
+    <container class="btn-row">
+      <container class="btn" name="btn-next">
+        <text class="btn-text">PLAY AGAIN</text>
+      </container>
+      <container class="btn-sec" name="btn-menu-sc">
+        <text class="btn-text-sec">MENU</text>
+      </container>
+    </container>
+  </container>
+</panel>

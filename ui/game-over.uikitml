@@ -1,0 +1,78 @@
+<panel>
+  <style>
+    .root {
+      width: 500;
+      background-color: rgba(5, 5, 20, 0.95);
+      border-radius: 16;
+      padding: 28;
+      flex-direction: column;
+      align-items: center;
+      gap: 14;
+      border-color: #ff4400;
+      border-width: 2;
+    }
+    .title {
+      font-size: 36;
+      color: #ff4400;
+      font-weight: bold;
+    }
+    .score-big {
+      font-size: 48;
+      color: #ffaa00;
+      font-weight: bold;
+    }
+    .label {
+      font-size: 18;
+      color: #888899;
+    }
+    .btn-row {
+      flex-direction: row;
+      gap: 16;
+      margin-top: 12;
+    }
+    .btn {
+      width: 180;
+      height: 48;
+      background-color: #332211;
+      border-radius: 8;
+      justify-content: center;
+      align-items: center;
+      border-color: #ff6600;
+      border-width: 1;
+      cursor: pointer;
+    }
+    .btn-sec {
+      width: 180;
+      height: 48;
+      background-color: #1a1a3e;
+      border-radius: 8;
+      justify-content: center;
+      align-items: center;
+      border-color: #666688;
+      border-width: 1;
+      cursor: pointer;
+    }
+    .btn-text {
+      font-size: 18;
+      color: #ff8800;
+      font-weight: bold;
+    }
+    .btn-text-sec {
+      font-size: 18;
+      color: #888899;
+    }
+  </style>
+  <container class="root">
+    <text class="title">GAME OVER</text>
+    <text class="score-big" name="go-score">0</text>
+    <text class="label" name="go-info">Great shooting!</text>
+    <container class="btn-row">
+      <container class="btn" name="btn-retry">
+        <text class="btn-text">RETRY</text>
+      </container>
+      <container class="btn-sec" name="btn-menu-go">
+        <text class="btn-text-sec">MENU</text>
+      </container>
+    </container>
+  </container>
+</panel>
