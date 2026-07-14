@@ -1,4 +1,4 @@
-// ===== Game Data: Modes, Difficulties, Achievements =====
+// ===== Game Data: Modes, Difficulties, Achievements, Pigeon Types, Ranks =====
 
 export interface GameMode {
 	id: string;
@@ -9,6 +9,72 @@ export interface GameMode {
 	doubles: boolean;
 	speedMode: boolean;
 	timeLimit: number; // 0 = no limit
+	practice?: boolean; // endless practice, no save
+}
+
+// ===== Special Pigeon Types =====
+export type PigeonType = 'normal' | 'armored' | 'zigzag' | 'ghost';
+
+export interface PigeonTypeConfig {
+	type: PigeonType;
+	label: string;
+	bodyColor: number;
+	emissiveColor: number;
+	ringColor: number;
+	hitPoints: number;
+	scoreMultiplier: number;
+}
+
+export const PIGEON_TYPES: Record<PigeonType, PigeonTypeConfig> = {
+	normal: { type: 'normal', label: 'Standard', bodyColor: 0, emissiveColor: 0, ringColor: 0, hitPoints: 1, scoreMultiplier: 1.0 },
+	armored: { type: 'armored', label: 'Armored', bodyColor: 0xccaa00, emissiveColor: 0xaa8800, ringColor: 0xffdd44, hitPoints: 2, scoreMultiplier: 2.5 },
+	zigzag: { type: 'zigzag', label: 'Zigzag', bodyColor: 0x00ffcc, emissiveColor: 0x00ccaa, ringColor: 0x66ffdd, hitPoints: 1, scoreMultiplier: 1.5 },
+	ghost: { type: 'ghost', label: 'Ghost', bodyColor: 0xbb88ff, emissiveColor: 0x8855cc, ringColor: 0xddbbff, hitPoints: 1, scoreMultiplier: 2.0 },
+};
+
+export function getSpecialPigeonChance(difficultyId: string): number {
+	switch (difficultyId) {
+		case 'easy': return 0;
+		case 'medium': return 0.12;
+		case 'hard': return 0.22;
+		case 'expert': return 0.32;
+		default: return 0.12;
+	}
+}
+
+export function rollSpecialPigeonType(): PigeonType {
+	const roll = Math.random();
+	if (roll < 0.35) return 'armored';
+	if (roll < 0.65) return 'zigzag';
+	return 'ghost';
+}
+
+// ===== Player Rank System =====
+export interface PlayerRank {
+	title: string;
+	minScore: number;
+	color: string;
+}
+
+export const PLAYER_RANKS: PlayerRank[] = [
+	{ title: 'Rookie', minScore: 0, color: '#888899' },
+	{ title: 'Novice', minScore: 25, color: '#aaaacc' },
+	{ title: 'Regular', minScore: 75, color: '#00ccff' },
+	{ title: 'Skilled', minScore: 150, color: '#00ff88' },
+	{ title: 'Expert', minScore: 300, color: '#ffaa00' },
+	{ title: 'Master', minScore: 500, color: '#ff6600' },
+	{ title: 'Grandmaster', minScore: 750, color: '#ff0088' },
+	{ title: 'Legend', minScore: 1000, color: '#aa00ff' },
+	{ title: 'Mythic', minScore: 2000, color: '#ffcc00' },
+];
+
+export function getPlayerRank(totalHits: number, achievementCount: number): PlayerRank {
+	const combinedScore = totalHits + achievementCount * 10;
+	let rank = PLAYER_RANKS[0];
+	for (const r of PLAYER_RANKS) {
+		if (combinedScore >= r.minScore) rank = r;
+	}
+	return rank;
 }
 
 export const GAME_MODES: GameMode[] = [
@@ -61,6 +127,17 @@ export const GAME_MODES: GameMode[] = [
 		doubles: false,
 		speedMode: false,
 		timeLimit: 0,
+	},
+	{
+		id: 'practice',
+		name: 'Practice Range',
+		description: 'Endless targets, no scoring. Warm up and experiment freely.',
+		stations: 1,
+		pigeonsPerStation: 999,
+		doubles: false,
+		speedMode: false,
+		timeLimit: 0,
+		practice: true,
 	},
 ];
 
@@ -163,6 +240,8 @@ export function getStationPositions(modeId: string): { x: number; z: number; ang
 			});
 		case 'speed':
 			return [{ x: 0, z: 1, angle: 0 }];
+		case 'practice':
+			return [{ x: 0, z: 1, angle: 0 }];
 		case 'sporting':
 			return [
 				{ x: -5, z: 0, angle: 0.2 },
@@ -235,6 +314,17 @@ export function getLaunchConfig(modeId: string, stationIdx: number): {
 				angleV: 0.2 + Math.random() * 0.4,
 				speed: 0.8 + Math.random() * 0.4,
 			}];
+		case 'practice':
+			return [{
+				origin: {
+					x: (Math.random() - 0.5) * 14,
+					y: 0.3 + Math.random() * 1.5,
+					z: -12 - Math.random() * 5,
+				},
+				angleH: (Math.random() - 0.5) * 0.9,
+				angleV: 0.3 + Math.random() * 0.2,
+				speed: 0.7 + Math.random() * 0.3,
+			}];
 		default:
 			return [{
 				origin: { x: 0, y: 0.3, z: -15 },
@@ -253,6 +343,7 @@ export function getPigeonColors(modeId: string): { body: number; emissive: numbe
 		case 'skeet': return { body: 0x00ccff, emissive: 0x0088cc, ring: 0x66ddff };
 		case 'speed': return { body: 0x00ff88, emissive: 0x00cc66, ring: 0x66ffbb };
 		case 'sporting': return { body: 0xaa00ff, emissive: 0x8800cc, ring: 0xcc66ff };
+		case 'practice': return { body: 0x44ccff, emissive: 0x2299cc, ring: 0x88ddff };
 		default: return { body: 0xff6600, emissive: 0xff4400, ring: 0xffaa00 };
 	}
 }

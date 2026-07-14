@@ -87,6 +87,11 @@
       <text class="mode-desc">Varied trajectories from all directions.</text>
       <text class="mode-best" name="best-sporting">No score yet</text>
     </container>
+    <container class="mode-btn" name="mode-practice">
+      <text class="mode-name">Practice Range</text>
+      <text class="mode-desc">Endless targets, no scoring. Warm up freely.</text>
+      <text class="mode-best" name="best-practice">No scoring — just shoot!</text>
+    </container>
     <container class="back-btn" name="btn-back">
       <text class="back-text">BACK</text>
     </container>

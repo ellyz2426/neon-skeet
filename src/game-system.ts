@@ -47,6 +47,11 @@ import {
 	getStationPositions,
 	getLaunchConfig,
 	getPigeonColors,
+	PigeonType,
+	PIGEON_TYPES,
+	getSpecialPigeonChance,
+	rollSpecialPigeonType,
+	getPlayerRank,
 } from './data';
 
 // ===== Types =====
@@ -61,6 +66,12 @@ interface ActivePigeon {
 	maxLifetime: number;
 	hitFlash: number;
 	trailTimer: number;
+	pigeonType: PigeonType;
+	hitPoints: number;
+	zigzagPhase: number;
+	zigzagFrequency: number;
+	ghostFlickerSpeed: number;
+	armorRing: Mesh | null;
 }
 
 interface Particle {
@@ -218,6 +229,14 @@ export class GameSystem extends createSystem({
 	private cameraShakeTimer = 0;
 	private cameraShakeIntensity = 0;
 
+	// Streak glow visual
+	private streakGlowGroup: Group | null = null;
+	private streakGlowRings: Mesh[] = [];
+
+	// Special pigeon tracking
+	private specialPigeonCount = 0;
+	private armoredHitsThisRound = 0;
+
 	// Mode themes
 	private static MODE_THEMES: Record<string, ModeTheme> = {
 		trap: { fogColor: 0x050510, ambientColor: 0x1a1a2e, ambientIntensity: 0.6, accentLight1: 0x00ccff, accentLight2: 0xff6600, skyTint: 0x001122, droneFreqBase: 55 },
@@ -225,6 +244,7 @@ export class GameSystem extends createSystem({
 		skeet: { fogColor: 0x050a10, ambientColor: 0x141e2e, ambientIntensity: 0.65, accentLight1: 0x00ccff, accentLight2: 0x00ff88, skyTint: 0x001a22, droneFreqBase: 60 },
 		speed: { fogColor: 0x0a0a05, ambientColor: 0x1e1e14, ambientIntensity: 0.55, accentLight1: 0x00ff88, accentLight2: 0xffcc00, skyTint: 0x0a1100, droneFreqBase: 70 },
 		sporting: { fogColor: 0x080510, ambientColor: 0x181428, ambientIntensity: 0.55, accentLight1: 0xaa00ff, accentLight2: 0x00ccff, skyTint: 0x0a0022, droneFreqBase: 50 },
+		practice: { fogColor: 0x050808, ambientColor: 0x141e22, ambientIntensity: 0.7, accentLight1: 0x44ccff, accentLight2: 0x44ffcc, skyTint: 0x001118, droneFreqBase: 65 },
 	};
 
 	// Save data
@@ -256,6 +276,7 @@ export class GameSystem extends createSystem({
 		this.buildWindArrow();
 		this.buildShotgunModel();
 		this.buildMuzzleFlash();
+		this.buildStreakGlow();
 		this.createPanels();
 		this.setupMouseListeners();
 		this.setupKeyboardListeners();
@@ -720,6 +741,36 @@ export class GameSystem extends createSystem({
 		this.cameraShakeIntensity = 0.003;
 	}
 
+	// ===== Streak Glow (screen edge tint for combos) =====
+	private buildStreakGlow() {
+		this.streakGlowGroup = new Group();
+		this.streakGlowRings = [];
+
+		// Create 4 edge glow quads (top, bottom, left, right)
+		const createEdge = (width: number, height: number, x: number, y: number) => {
+			const geo = new BoxGeometry(width, height, 0.001);
+			const mat = new MeshBasicMaterial({
+				color: 0x00ff88,
+				transparent: true,
+				opacity: 0,
+				depthTest: false,
+				blending: AdditiveBlending,
+			});
+			const mesh = new Mesh(geo, mat);
+			mesh.position.set(x, y, -1.5);
+			this.streakGlowGroup!.add(mesh);
+			this.streakGlowRings.push(mesh);
+		};
+
+		// Thin bars at screen edges
+		createEdge(2.5, 0.02, 0, 1.0);  // top
+		createEdge(2.5, 0.02, 0, -1.0); // bottom
+		createEdge(0.02, 2.0, -1.2, 0); // left
+		createEdge(0.02, 2.0, 1.2, 0);  // right
+
+		this.camera.add(this.streakGlowGroup);
+	}
+
 	// ===== Mode Theme Application =====
 	private applyModeTheme(modeId: string) {
 		const theme = GameSystem.MODE_THEMES[modeId] || GameSystem.MODE_THEMES['trap'];
@@ -1089,6 +1140,8 @@ export class GameSystem extends createSystem({
 		this.speed30sTracked = false;
 		this.skeetFirstHits = new Set();
 		this.roundStartTime = performance.now();
+		this.specialPigeonCount = 0;
+		this.armoredHitsThisRound = 0;
 
 		// Set wind for this round
 		this.windX = (Math.random() - 0.5) * this.difficulty.windStrength * 2;
@@ -1195,21 +1248,35 @@ export class GameSystem extends createSystem({
 
 		const launches = getLaunchConfig(this.currentMode.id, this.currentStation);
 		const pigeonCount = this.currentMode.doubles ? 2 : 1;
-		const colors = getPigeonColors(this.currentMode.id);
+		const modeColors = getPigeonColors(this.currentMode.id);
 
 		for (let p = 0; p < Math.min(pigeonCount, launches.length === 1 ? pigeonCount : launches.length); p++) {
 			const config = launches[Math.min(p, launches.length - 1)];
 			const speed = this.difficulty.pigeonSpeed * config.speed * this.speedPigeonSpeed;
 
-			// Create pigeon mesh with mode-specific colors
+			// Roll for special pigeon type (not in practice mode)
+			let pigeonType: PigeonType = 'normal';
+			if (!this.currentMode.practice && Math.random() < getSpecialPigeonChance(this.difficulty.id)) {
+				pigeonType = rollSpecialPigeonType();
+				this.specialPigeonCount++;
+			}
+
+			const typeConfig = PIGEON_TYPES[pigeonType];
+			const colors = pigeonType === 'normal' ? modeColors : {
+				body: typeConfig.bodyColor,
+				emissive: typeConfig.emissiveColor,
+				ring: typeConfig.ringColor,
+			};
+
+			// Create pigeon mesh
 			const pigeonGroup = new Group();
 			const discGeo = new TorusGeometry(0.15 * this.difficulty.pigeonScale, 0.04 * this.difficulty.pigeonScale, 8, 24);
 			const discMat = new MeshStandardMaterial({
 				color: colors.body,
 				emissive: colors.emissive,
-				emissiveIntensity: 0.8,
-				metalness: 0.3,
-				roughness: 0.4,
+				emissiveIntensity: pigeonType === 'armored' ? 1.0 : 0.8,
+				metalness: pigeonType === 'armored' ? 0.7 : 0.3,
+				roughness: pigeonType === 'armored' ? 0.1 : 0.4,
 			});
 			const disc = new Mesh(discGeo, discMat);
 			disc.rotation.x = Math.PI / 2;
@@ -1220,7 +1287,7 @@ export class GameSystem extends createSystem({
 			const innerMat = new MeshStandardMaterial({
 				color: colors.body,
 				emissive: colors.emissive,
-				emissiveIntensity: 0.6,
+				emissiveIntensity: pigeonType === 'ghost' ? 0.3 : 0.6,
 			});
 			const inner = new Mesh(innerGeo, innerMat);
 			pigeonGroup.add(inner);
@@ -1232,15 +1299,38 @@ export class GameSystem extends createSystem({
 			wireframe.rotation.x = Math.PI / 2;
 			pigeonGroup.add(wireframe);
 
-			// Glow sphere around pigeon for visibility
+			// Glow sphere
 			const glowGeo = new SphereGeometry(0.2 * this.difficulty.pigeonScale, 8, 8);
 			const glowMat = new MeshBasicMaterial({
 				color: colors.emissive,
 				transparent: true,
-				opacity: 0.15,
+				opacity: pigeonType === 'ghost' ? 0.08 : 0.15,
 			});
 			const glow = new Mesh(glowGeo, glowMat);
 			pigeonGroup.add(glow);
+
+			// Armored pigeon: visible shield ring
+			let armorRing: Mesh | null = null;
+			if (pigeonType === 'armored') {
+				const shieldGeo = new TorusGeometry(0.22 * this.difficulty.pigeonScale, 0.01, 8, 24);
+				const shieldMat = new MeshBasicMaterial({
+					color: 0xffdd44,
+					transparent: true,
+					opacity: 0.7,
+					blending: AdditiveBlending,
+				});
+				armorRing = new Mesh(shieldGeo, shieldMat);
+				armorRing.rotation.x = Math.PI / 2;
+				pigeonGroup.add(armorRing);
+			}
+
+			// Ghost pigeon: semi-transparent
+			if (pigeonType === 'ghost') {
+				discMat.transparent = true;
+				discMat.opacity = 0.5;
+				innerMat.transparent = true;
+				innerMat.opacity = 0.4;
+			}
 
 			// Position at launch origin
 			const origin = config.origin;
@@ -1270,6 +1360,12 @@ export class GameSystem extends createSystem({
 				maxLifetime: 5,
 				hitFlash: 0,
 				trailTimer: 0,
+				pigeonType,
+				hitPoints: typeConfig.hitPoints,
+				zigzagPhase: Math.random() * Math.PI * 2,
+				zigzagFrequency: 3 + Math.random() * 2,
+				ghostFlickerSpeed: 4 + Math.random() * 3,
+				armorRing,
 			};
 
 			this.pigeons.push(pigeon);
@@ -1284,6 +1380,13 @@ export class GameSystem extends createSystem({
 	private nextPigeon() {
 		this.pigeonActive = false;
 		this.currentPigeon++;
+
+		// Practice mode: endless pigeons, auto-launch
+		if (this.currentMode.practice) {
+			this.waitingForPull = true;
+			this.pullTimer = 0;
+			return;
+		}
 
 		if (this.currentMode.speedMode) {
 			// Speed mode: continuous launch
@@ -1317,6 +1420,13 @@ export class GameSystem extends createSystem({
 	private endRound() {
 		this.roundComplete = true;
 		this.roundScore = this.score;
+
+		// Practice mode: no saves, just show scorecard
+		if (this.currentMode.practice) {
+			this.updateScorecardUI();
+			this.showPanel('round_end');
+			return;
+		}
 
 		// Update play time
 		const roundTime = (performance.now() - this.roundStartTime) / 1000 / 60; // minutes
@@ -1500,6 +1610,22 @@ export class GameSystem extends createSystem({
 	}
 
 	private onHit(pigeon: ActivePigeon) {
+		// Armored pigeon: decrement hitPoints, only destroy when 0
+		if (pigeon.pigeonType === 'armored' && pigeon.hitPoints > 1) {
+			pigeon.hitPoints--;
+			this.armoredHitsThisRound++;
+			// Visual feedback: shield crack effect
+			if (pigeon.armorRing) {
+				const mat = pigeon.armorRing.material as MeshBasicMaterial;
+				mat.opacity = 0.3;
+				mat.color.setHex(0xff6600);
+			}
+			// Spawn spark particles at hit
+			this.spawnGrazeSparks(pigeon.group.position.clone(), pigeon.group.position.clone().add(new Vector3(0, 0.3, 0)));
+			this.playSound('armorHit');
+			return; // not dead yet
+		}
+
 		pigeon.alive = false;
 		pigeon.hitFlash = 0.3;
 		this.hits++;
@@ -1507,10 +1633,11 @@ export class GameSystem extends createSystem({
 		this.noMissCount++;
 		if (this.streak > this.bestStreak) this.bestStreak = this.streak;
 
-		// Scoring: base 100 * difficulty multiplier * streak bonus
+		// Scoring: base 100 * difficulty * streak * first-shot * pigeon type multiplier
+		const typeConfig = PIGEON_TYPES[pigeon.pigeonType];
 		const streakBonus = 1 + Math.min(this.streak * 0.1, 2.0);
 		const firstShotBonus = this.shotsThisTarget === 1 ? 1.5 : 1.0;
-		const points = Math.floor(100 * this.difficulty.scoreMultiplier * streakBonus * firstShotBonus);
+		const points = Math.floor(100 * this.difficulty.scoreMultiplier * streakBonus * firstShotBonus * typeConfig.scoreMultiplier);
 		this.score += points;
 
 		// Spawn floating score text
@@ -1934,6 +2061,33 @@ export class GameSystem extends createSystem({
 				osc.stop(now + 0.4);
 				break;
 			}
+			case 'armorHit': {
+				// Metallic clang for armored pigeon
+				const osc1 = ctx.createOscillator();
+				osc1.type = 'square';
+				osc1.frequency.setValueAtTime(600, now);
+				osc1.frequency.exponentialRampToValueAtTime(200, now + 0.15);
+				const gain1 = ctx.createGain();
+				gain1.gain.setValueAtTime(0.3, now);
+				gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+				const filter1 = ctx.createBiquadFilter();
+				filter1.type = 'bandpass';
+				filter1.frequency.value = 800;
+				filter1.Q.value = 8;
+				osc1.connect(filter1).connect(gain1).connect(this.masterGain!);
+				osc1.start(now);
+				osc1.stop(now + 0.25);
+				// High ring
+				const osc2 = ctx.createOscillator();
+				osc2.frequency.value = 1800;
+				const gain2 = ctx.createGain();
+				gain2.gain.setValueAtTime(0.15, now);
+				gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+				osc2.connect(gain2).connect(this.masterGain!);
+				osc2.start(now);
+				osc2.stop(now + 0.35);
+				break;
+			}
 		}
 	}
 
@@ -1984,7 +2138,7 @@ export class GameSystem extends createSystem({
 		const windStr = this.difficulty.windStrength > 0
 			? `Wind: ${this.windX > 0 ? '>' : '<'} ${Math.abs(this.windX).toFixed(1)}`
 			: 'No Wind';
-		this.setText('hud', 'wind-val', windStr);
+		this.setText('hud', 'wind-val', this.currentMode.practice ? 'Practice Mode' : windStr);
 
 		// Achievement notification
 		if (this.recentAchievement) {
@@ -1998,11 +2152,18 @@ export class GameSystem extends createSystem({
 		this.setText('mainMenu', 'total-score', `Total Hits: ${this.saveData.totalHits}`);
 		this.setText('mainMenu', 'total-rounds', `Rounds: ${this.saveData.totalRounds}`);
 		this.setText('mainMenu', 'ach-count', `${this.saveData.achievements.length}/${ACHIEVEMENTS.length}`);
+		// Rank display
+		const rank = getPlayerRank(this.saveData.totalHits, this.saveData.achievements.length);
+		this.setText('mainMenu', 'rank-title', `Rank: ${rank.title}`);
 	}
 
 	private updateModeSelectUI() {
 		// Show best scores for each mode
 		for (const mode of GAME_MODES) {
+			if (mode.practice) {
+				this.setText('modeSelect', `best-${mode.id}`, 'No scoring — just shoot!');
+				continue;
+			}
 			const best = this.saveData.bestScores[mode.id];
 			const bestText = best ? `Best: ${best}` : 'No score yet';
 			this.setText('modeSelect', `best-${mode.id}`, bestText);
@@ -2190,6 +2351,7 @@ export class GameSystem extends createSystem({
 		this.updateShotgunModel();
 		this.updateMuzzleFlash(delta);
 		this.updateCameraShake(delta);
+		this.updateStreakGlow(time);
 
 		// Handle input
 		this.handleInput();
@@ -2298,6 +2460,44 @@ export class GameSystem extends createSystem({
 				pigeon.velocity.y -= 9.8 * delta; // Gravity
 				pigeon.velocity.x += this.windX * delta;
 				pigeon.velocity.z += this.windZ * delta;
+
+				// Zigzag behavior: sinusoidal lateral movement
+				if (pigeon.pigeonType === 'zigzag') {
+					pigeon.zigzagPhase += delta * pigeon.zigzagFrequency;
+					const zigzagForce = Math.cos(pigeon.zigzagPhase) * 12 * delta;
+					// Apply perpendicular to velocity direction
+					const vel2d = Math.sqrt(pigeon.velocity.x * pigeon.velocity.x + pigeon.velocity.z * pigeon.velocity.z);
+					if (vel2d > 0.1) {
+						pigeon.velocity.x += (-pigeon.velocity.z / vel2d) * zigzagForce;
+						pigeon.velocity.z += (pigeon.velocity.x / vel2d) * zigzagForce;
+					}
+				}
+
+				// Ghost behavior: flicker opacity
+				if (pigeon.pigeonType === 'ghost') {
+					const flicker = 0.25 + 0.35 * Math.sin(pigeon.lifetime * pigeon.ghostFlickerSpeed);
+					const disc = pigeon.group.children[0] as Mesh;
+					const inner = pigeon.group.children[1] as Mesh;
+					const glow = pigeon.group.children[3] as Mesh;
+					if (disc?.material instanceof MeshStandardMaterial) {
+						disc.material.opacity = flicker;
+					}
+					if (inner?.material instanceof MeshStandardMaterial) {
+						inner.material.opacity = flicker * 0.8;
+					}
+					if (glow?.material instanceof MeshBasicMaterial) {
+						glow.material.opacity = flicker * 0.2;
+					}
+				}
+
+				// Armored: pulse shield ring
+				if (pigeon.pigeonType === 'armored' && pigeon.armorRing) {
+					const mat = pigeon.armorRing.material as MeshBasicMaterial;
+					if (pigeon.hitPoints > 1) {
+						mat.opacity = 0.5 + 0.3 * Math.sin(pigeon.lifetime * 4);
+					}
+					pigeon.armorRing.rotation.z += delta * 2;
+				}
 
 				pigeon.group.position.add(
 					pigeon.velocity.clone().multiplyScalar(delta),
@@ -2592,6 +2792,37 @@ export class GameSystem extends createSystem({
 		} else {
 			this.crosshairGroup.position.x = 0;
 			this.crosshairGroup.position.y = 0;
+		}
+	}
+
+	// ===== Streak Glow Visual =====
+	private updateStreakGlow(time: number) {
+		if (!this.streakGlowRings.length) return;
+
+		let targetOpacity = 0;
+		let glowColor = 0x00ff88;
+
+		if (this.phase === 'playing' && this.streak >= 3) {
+			if (this.streak >= 15) {
+				targetOpacity = 0.25 + 0.1 * Math.sin(time * 6);
+				glowColor = 0xff4400; // red-hot
+			} else if (this.streak >= 10) {
+				targetOpacity = 0.18 + 0.08 * Math.sin(time * 5);
+				glowColor = 0xffaa00; // gold
+			} else if (this.streak >= 5) {
+				targetOpacity = 0.12 + 0.05 * Math.sin(time * 4);
+				glowColor = 0x00ff88; // green
+			} else {
+				targetOpacity = 0.06 + 0.03 * Math.sin(time * 3);
+				glowColor = 0x00ccff; // cyan
+			}
+		}
+
+		for (const ring of this.streakGlowRings) {
+			const mat = ring.material as MeshBasicMaterial;
+			mat.color.setHex(glowColor);
+			// Smooth approach to target
+			mat.opacity += (targetOpacity - mat.opacity) * 0.1;
 		}
 	}
 }
