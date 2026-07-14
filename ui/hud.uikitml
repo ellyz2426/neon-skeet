@@ -67,6 +67,11 @@
       color: #ffcc00;
       font-weight: bold;
     }
+    .combo-text {
+      font-size: 20;
+      color: #ff4400;
+      font-weight: bold;
+    }
   </style>
   <container class="root">
     <text class="mode-label" name="mode-name">Trap</text>
@@ -74,6 +79,9 @@
       <container>
         <text class="score-label">SCORE</text>
         <text class="score-val" name="score-val">0</text>
+      </container>
+      <container>
+        <text class="combo-text" name="combo-val"></text>
       </container>
       <container>
         <text class="score-label">STREAK</text>

@@ -81,6 +81,22 @@ interface FloatingText {
 	maxLifetime: number;
 }
 
+interface Shockwave {
+	ring: Mesh;
+	lifetime: number;
+	maxLifetime: number;
+}
+
+interface ModeTheme {
+	fogColor: number;
+	ambientColor: number;
+	ambientIntensity: number;
+	accentLight1: number;
+	accentLight2: number;
+	skyTint: number;
+	droneFreqBase: number;
+}
+
 interface SaveData {
 	totalHits: number;
 	totalShots: number;
@@ -185,6 +201,32 @@ export class GameSystem extends createSystem({
 	private recentAchievement: string | null = null;
 	private recentAchTimer = 0;
 
+	// Round 3: New features
+	private shockwaves: Shockwave[] = [];
+	private starfieldGroup!: Group;
+	private shotgunGroup: Group | null = null;
+	private orbitLights: { mesh: Mesh; angle: number; speed: number; radius: number; height: number }[] = [];
+	private ambientDrone: OscillatorNode | null = null;
+	private ambientDroneGain: GainNode | null = null;
+	private ambientDroneFilter: BiquadFilterNode | null = null;
+	private currentTheme: ModeTheme | null = null;
+	private ambientLightRef: AmbientLight | null = null;
+	private accentLight1Ref: PointLight | null = null;
+	private accentLight2Ref: PointLight | null = null;
+	private muzzleFlashGroup: Group | null = null;
+	private muzzleFlashTimer = 0;
+	private cameraShakeTimer = 0;
+	private cameraShakeIntensity = 0;
+
+	// Mode themes
+	private static MODE_THEMES: Record<string, ModeTheme> = {
+		trap: { fogColor: 0x050510, ambientColor: 0x1a1a2e, ambientIntensity: 0.6, accentLight1: 0x00ccff, accentLight2: 0xff6600, skyTint: 0x001122, droneFreqBase: 55 },
+		double_trap: { fogColor: 0x0a0510, ambientColor: 0x1a1028, ambientIntensity: 0.5, accentLight1: 0xff0088, accentLight2: 0x8800ff, skyTint: 0x110022, droneFreqBase: 45 },
+		skeet: { fogColor: 0x050a10, ambientColor: 0x141e2e, ambientIntensity: 0.65, accentLight1: 0x00ccff, accentLight2: 0x00ff88, skyTint: 0x001a22, droneFreqBase: 60 },
+		speed: { fogColor: 0x0a0a05, ambientColor: 0x1e1e14, ambientIntensity: 0.55, accentLight1: 0x00ff88, accentLight2: 0xffcc00, skyTint: 0x0a1100, droneFreqBase: 70 },
+		sporting: { fogColor: 0x080510, ambientColor: 0x181428, ambientIntensity: 0.55, accentLight1: 0xaa00ff, accentLight2: 0x00ccff, skyTint: 0x0a0022, droneFreqBase: 50 },
+	};
+
 	// Save data
 	private saveData: SaveData = {
 		totalHits: 0,
@@ -212,6 +254,8 @@ export class GameSystem extends createSystem({
 		this.buildEnvironment();
 		this.buildCrosshair();
 		this.buildWindArrow();
+		this.buildShotgunModel();
+		this.buildMuzzleFlash();
 		this.createPanels();
 		this.setupMouseListeners();
 		this.setupKeyboardListeners();
@@ -223,15 +267,18 @@ export class GameSystem extends createSystem({
 		// Lighting
 		const ambient = new AmbientLight(0x1a1a2e, 0.6);
 		this.scene.add(ambient);
+		this.ambientLightRef = ambient;
 		const dirLight = new DirectionalLight(0x4488cc, 0.8);
 		dirLight.position.set(5, 15, 10);
 		this.scene.add(dirLight);
 		const pointLight1 = new PointLight(0x00ccff, 1.5, 40);
 		pointLight1.position.set(0, 8, -10);
 		this.scene.add(pointLight1);
+		this.accentLight1Ref = pointLight1;
 		const pointLight2 = new PointLight(0xff6600, 0.8, 30);
 		pointLight2.position.set(-8, 5, -5);
 		this.scene.add(pointLight2);
+		this.accentLight2Ref = pointLight2;
 
 		// Additional rim lights for atmosphere
 		const rimLight1 = new PointLight(0x8800ff, 0.5, 50);
@@ -358,6 +405,12 @@ export class GameSystem extends createSystem({
 			dust.userData['floatOffset'] = Math.random() * Math.PI * 2;
 			this.environmentGroup.add(dust);
 		}
+
+		// ===== Starfield =====
+		this.buildStarfield();
+
+		// ===== Orbiting accent lights =====
+		this.buildOrbitLights();
 	}
 
 	private buildGridLines() {
@@ -490,6 +543,334 @@ export class GameSystem extends createSystem({
 
 		this.windArrow.visible = false;
 		this.scene.add(this.windArrow);
+	}
+
+	// ===== Starfield =====
+	private buildStarfield() {
+		this.starfieldGroup = new Group();
+		const starColors = [0xffffff, 0xaaccff, 0xffccaa, 0x88aaff, 0x00ccff];
+		for (let i = 0; i < 200; i++) {
+			const size = 0.03 + Math.random() * 0.06;
+			const geo = new SphereGeometry(size, 4, 4);
+			const mat = new MeshBasicMaterial({
+				color: starColors[Math.floor(Math.random() * starColors.length)],
+				transparent: true,
+				opacity: 0.3 + Math.random() * 0.5,
+			});
+			const star = new Mesh(geo, mat);
+			// Distribute across hemisphere above the scene
+			const theta = Math.random() * Math.PI * 2;
+			const phi = Math.random() * Math.PI * 0.4 + 0.1; // above horizon
+			const dist = 55 + Math.random() * 25;
+			star.position.set(
+				Math.cos(theta) * Math.sin(phi) * dist,
+				Math.cos(phi) * dist + 5,
+				Math.sin(theta) * Math.sin(phi) * dist - 10,
+			);
+			star.userData['twinkleSpeed'] = 1 + Math.random() * 3;
+			star.userData['twinkleOffset'] = Math.random() * Math.PI * 2;
+			star.userData['baseOpacity'] = (mat as MeshBasicMaterial).opacity;
+			this.starfieldGroup.add(star);
+		}
+		this.scene.add(this.starfieldGroup);
+	}
+
+	// ===== Orbiting Accent Lights =====
+	private buildOrbitLights() {
+		const orbitColors = [0x00ccff, 0xff6600, 0x8800ff, 0x00ff88];
+		for (let i = 0; i < 4; i++) {
+			const geo = new SphereGeometry(0.12, 8, 8);
+			const mat = new MeshBasicMaterial({
+				color: orbitColors[i],
+				transparent: true,
+				opacity: 0.6,
+			});
+			const orb = new Mesh(geo, mat);
+			const angle = (i / 4) * Math.PI * 2;
+			const radius = 18 + i * 3;
+			const height = 6 + i * 2;
+			orb.position.set(
+				Math.cos(angle) * radius,
+				height,
+				Math.sin(angle) * radius - 10,
+			);
+			this.scene.add(orb);
+			this.orbitLights.push({
+				mesh: orb,
+				angle,
+				speed: 0.15 + i * 0.05,
+				radius,
+				height,
+			});
+		}
+	}
+
+	// ===== VR Shotgun Model =====
+	private buildShotgunModel() {
+		this.shotgunGroup = new Group();
+
+		// Barrel
+		const barrelGeo = new CylinderGeometry(0.015, 0.018, 0.5, 8);
+		const barrelMat = new MeshStandardMaterial({
+			color: 0x333344,
+			emissive: 0x111122,
+			metalness: 0.8,
+			roughness: 0.2,
+		});
+		const barrel = new Mesh(barrelGeo, barrelMat);
+		barrel.rotation.x = Math.PI / 2;
+		barrel.position.z = -0.25;
+		this.shotgunGroup.add(barrel);
+
+		// Second barrel (side by side)
+		const barrel2 = new Mesh(barrelGeo, barrelMat);
+		barrel2.rotation.x = Math.PI / 2;
+		barrel2.position.set(0.025, 0, -0.25);
+		this.shotgunGroup.add(barrel2);
+
+		// Barrel neon rings
+		for (let i = 0; i < 3; i++) {
+			const ringGeo = new TorusGeometry(0.025, 0.003, 8, 16);
+			const ringMat = new MeshBasicMaterial({
+				color: 0x00ccff,
+				transparent: true,
+				opacity: 0.6,
+			});
+			const ring = new Mesh(ringGeo, ringMat);
+			ring.position.z = -0.1 - i * 0.15;
+			this.shotgunGroup.add(ring);
+		}
+
+		// Muzzle glow
+		const muzzleGeo = new SphereGeometry(0.02, 8, 8);
+		const muzzleMat = new MeshBasicMaterial({
+			color: 0xff4400,
+			transparent: true,
+			opacity: 0.3,
+		});
+		const muzzle = new Mesh(muzzleGeo, muzzleMat);
+		muzzle.position.z = -0.5;
+		this.shotgunGroup.add(muzzle);
+
+		// Stock/grip (behind hand)
+		const stockGeo = new BoxGeometry(0.03, 0.04, 0.12);
+		const stockMat = new MeshStandardMaterial({
+			color: 0x442200,
+			emissive: 0x110800,
+			metalness: 0.1,
+			roughness: 0.7,
+		});
+		const stock = new Mesh(stockGeo, stockMat);
+		stock.position.z = 0.06;
+		this.shotgunGroup.add(stock);
+
+		this.shotgunGroup.visible = false;
+		this.scene.add(this.shotgunGroup);
+	}
+
+	// ===== Muzzle Flash =====
+	private buildMuzzleFlash() {
+		this.muzzleFlashGroup = new Group();
+
+		// Core flash
+		const coreGeo = new SphereGeometry(0.08, 8, 8);
+		const coreMat = new MeshBasicMaterial({
+			color: 0xff8800,
+			transparent: true,
+			opacity: 0,
+			blending: AdditiveBlending,
+			depthTest: false,
+		});
+		const core = new Mesh(coreGeo, coreMat);
+		this.muzzleFlashGroup.add(core);
+
+		// Outer flash ring
+		const ringGeo = new RingGeometry(0.04, 0.12, 16);
+		const ringMat = new MeshBasicMaterial({
+			color: 0xffcc00,
+			transparent: true,
+			opacity: 0,
+			blending: AdditiveBlending,
+			depthTest: false,
+		});
+		const ring = new Mesh(ringGeo, ringMat);
+		this.muzzleFlashGroup.add(ring);
+
+		// Flash point light
+		const flashLight = new PointLight(0xff6600, 0, 10);
+		this.muzzleFlashGroup.add(flashLight);
+
+		this.muzzleFlashGroup.position.set(0, 0, -2);
+		this.camera.add(this.muzzleFlashGroup);
+	}
+
+	private triggerMuzzleFlash() {
+		this.muzzleFlashTimer = 0.08;
+		if (this.muzzleFlashGroup) {
+			for (const child of this.muzzleFlashGroup.children) {
+				if (child instanceof Mesh) {
+					(child.material as MeshBasicMaterial).opacity = 0.9;
+				} else if (child instanceof PointLight) {
+					child.intensity = 3;
+				}
+			}
+		}
+		// Camera shake
+		this.cameraShakeTimer = 0.12;
+		this.cameraShakeIntensity = 0.003;
+	}
+
+	// ===== Mode Theme Application =====
+	private applyModeTheme(modeId: string) {
+		const theme = GameSystem.MODE_THEMES[modeId] || GameSystem.MODE_THEMES['trap'];
+		this.currentTheme = theme;
+
+		// Update fog
+		if (this.scene.fog instanceof Fog) {
+			this.scene.fog.color.setHex(theme.fogColor);
+		}
+
+		// Update ambient light
+		if (this.ambientLightRef) {
+			this.ambientLightRef.color.setHex(theme.ambientColor);
+			this.ambientLightRef.intensity = theme.ambientIntensity;
+		}
+
+		// Update accent lights
+		if (this.accentLight1Ref) {
+			this.accentLight1Ref.color.setHex(theme.accentLight1);
+		}
+		if (this.accentLight2Ref) {
+			this.accentLight2Ref.color.setHex(theme.accentLight2);
+		}
+
+		// Update orbit light colors to match theme
+		if (this.orbitLights.length >= 2) {
+			(this.orbitLights[0].mesh.material as MeshBasicMaterial).color.setHex(theme.accentLight1);
+			(this.orbitLights[1].mesh.material as MeshBasicMaterial).color.setHex(theme.accentLight2);
+		}
+
+		// Update ambient drone frequency
+		if (this.ambientDrone) {
+			this.ambientDrone.frequency.setValueAtTime(theme.droneFreqBase, this.audioCtx!.currentTime);
+		}
+	}
+
+	// ===== Shockwave Spawn =====
+	private spawnShockwave(pos: Vector3) {
+		const ringGeo = new TorusGeometry(0.1, 0.015, 8, 32);
+		const ringMat = new MeshBasicMaterial({
+			color: getPigeonColors(this.currentMode.id).emissive,
+			transparent: true,
+			opacity: 0.9,
+			depthTest: false,
+		});
+		const ring = new Mesh(ringGeo, ringMat);
+		ring.position.copy(pos);
+		ring.lookAt(this.camera.position);
+		this.scene.add(ring);
+		this.shockwaves.push({
+			ring,
+			lifetime: 0,
+			maxLifetime: 0.5,
+		});
+	}
+
+	// ===== Near-Miss/Graze System =====
+	private checkGraze(rayOrigin: Vector3, rayDir: Vector3) {
+		// Check if ray passed within graze distance of any alive pigeon
+		const grazeDistance = 0.5;
+
+		for (const pigeon of this.pigeons) {
+			if (!pigeon.alive) continue;
+
+			const pigeonPos = pigeon.group.position.clone();
+			const toTarget = pigeonPos.clone().sub(rayOrigin);
+			const projLength = toTarget.dot(rayDir);
+
+			if (projLength < 0) continue; // Behind the ray
+
+			const closestPoint = rayOrigin.clone().add(rayDir.clone().multiplyScalar(projLength));
+			const dist = closestPoint.distanceTo(pigeonPos);
+
+			if (dist < grazeDistance && dist > 0.2) {
+				// Near miss! Spawn graze sparks
+				this.spawnGrazeSparks(closestPoint, pigeonPos);
+				this.playSound('graze');
+				return;
+			}
+		}
+	}
+
+	private spawnGrazeSparks(hitPoint: Vector3, pigeonPos: Vector3) {
+		const sparkCount = 8;
+		const dir = hitPoint.clone().sub(pigeonPos).normalize();
+
+		for (let i = 0; i < sparkCount; i++) {
+			const geo = new SphereGeometry(0.01, 4, 4);
+			const mat = new MeshBasicMaterial({
+				color: 0xffaa00,
+				transparent: true,
+				opacity: 0.8,
+				blending: AdditiveBlending,
+			});
+			const spark = new Mesh(geo, mat);
+			spark.position.copy(hitPoint);
+			this.scene.add(spark);
+
+			const spreadDir = dir.clone().add(new Vector3(
+				(Math.random() - 0.5) * 2,
+				(Math.random() - 0.5) * 2,
+				(Math.random() - 0.5) * 2,
+			)).normalize();
+
+			this.particles.push({
+				mesh: spark,
+				velocity: spreadDir.multiplyScalar(3 + Math.random() * 4),
+				lifetime: 0,
+				maxLifetime: 0.3 + Math.random() * 0.2,
+			});
+		}
+	}
+
+	// ===== Ambient Drone =====
+	private startAmbientDrone() {
+		this.initAudio();
+		if (!this.audioCtx || !this.masterGain) return;
+
+		// Create a low ambient drone
+		const ctx = this.audioCtx;
+		this.ambientDrone = ctx.createOscillator();
+		this.ambientDrone.type = 'sine';
+		const theme = this.currentTheme || GameSystem.MODE_THEMES['trap'];
+		this.ambientDrone.frequency.value = theme.droneFreqBase;
+
+		this.ambientDroneFilter = ctx.createBiquadFilter();
+		this.ambientDroneFilter.type = 'lowpass';
+		this.ambientDroneFilter.frequency.value = 200;
+		this.ambientDroneFilter.Q.value = 1;
+
+		this.ambientDroneGain = ctx.createGain();
+		this.ambientDroneGain.gain.value = 0;
+		// Fade in
+		this.ambientDroneGain.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 1.0);
+
+		this.ambientDrone.connect(this.ambientDroneFilter).connect(this.ambientDroneGain).connect(this.masterGain);
+		this.ambientDrone.start();
+	}
+
+	private stopAmbientDrone() {
+		if (this.ambientDrone && this.ambientDroneGain && this.audioCtx) {
+			const now = this.audioCtx.currentTime;
+			this.ambientDroneGain.gain.linearRampToValueAtTime(0, now + 0.5);
+			const droneRef = this.ambientDrone;
+			setTimeout(() => {
+				try { droneRef.stop(); } catch (_e) { /* ignore */ }
+			}, 600);
+			this.ambientDrone = null;
+			this.ambientDroneGain = null;
+			this.ambientDroneFilter = null;
+		}
 	}
 
 	// ===== Panel Creation =====
@@ -664,6 +1045,7 @@ export class GameSystem extends createSystem({
 
 		if (panel === 'menu') {
 			this.updateMenuUI();
+			this.stopAmbientDrone();
 		} else if (panel === 'settings') {
 			this.updateSettingsUI();
 		} else if (panel === 'achievements') {
@@ -727,6 +1109,13 @@ export class GameSystem extends createSystem({
 		// Build station markers
 		this.clearStationMarkers();
 		this.buildStationMarkers();
+
+		// Apply mode-specific environment theme
+		this.applyModeTheme(this.currentMode.id);
+
+		// Start ambient drone
+		this.stopAmbientDrone();
+		this.startAmbientDrone();
 
 		this.showPanel('playing');
 		this.updateHUD();
@@ -1034,9 +1423,24 @@ export class GameSystem extends createSystem({
 		} else {
 			this.playSound('miss');
 			this.spawnTracerMiss();
+			// Check for near-miss graze
+			const gRayOrigin = new Vector3();
+			const gRayDir = new Vector3();
+			const rightGrip2 = this.gameWorld.playerSpaceEntities?.gripSpaces?.right?.object3D;
+			if (rightGrip2) {
+				rightGrip2.getWorldPosition(gRayOrigin);
+				const fwd = new Vector3(0, 0, -1);
+				fwd.applyQuaternion(rightGrip2.getWorldQuaternion(new Quaternion()));
+				gRayDir.copy(fwd);
+			} else {
+				this.camera.getWorldPosition(gRayOrigin);
+				this.camera.getWorldDirection(gRayDir);
+			}
+			this.checkGraze(gRayOrigin, gRayDir);
 		}
 
 		this.playSound('shoot');
+		this.triggerMuzzleFlash();
 
 		// Max 2 shots per single target
 		if (!this.currentMode.doubles && this.shotsThisTarget >= 2 && this.pigeonActive) {
@@ -1152,8 +1556,9 @@ export class GameSystem extends createSystem({
 		if (this.noMissCount >= 15) this.checkAchievement('no_miss_streak_15');
 		this.checkTotalAchievements();
 
-		// Particle explosion
+		// Particle explosion + shockwave
 		this.spawnShatterParticles(pigeon.group.position.clone());
+		this.spawnShockwave(pigeon.group.position.clone());
 		this.playSound('hit');
 		this.updateHUD();
 
@@ -1510,6 +1915,25 @@ export class GameSystem extends createSystem({
 				osc.stop(now + 0.15);
 				break;
 			}
+			case 'graze': {
+				// Near-miss zing/ricochet
+				const osc = ctx.createOscillator();
+				osc.type = 'sawtooth';
+				osc.frequency.setValueAtTime(2000, now);
+				osc.frequency.exponentialRampToValueAtTime(4000, now + 0.1);
+				osc.frequency.exponentialRampToValueAtTime(800, now + 0.3);
+				const gain = ctx.createGain();
+				gain.gain.setValueAtTime(0.12, now);
+				gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+				const filter = ctx.createBiquadFilter();
+				filter.type = 'bandpass';
+				filter.frequency.value = 3000;
+				filter.Q.value = 6;
+				osc.connect(filter).connect(gain).connect(this.masterGain!);
+				osc.start(now);
+				osc.stop(now + 0.4);
+				break;
+			}
 		}
 	}
 
@@ -1544,6 +1968,11 @@ export class GameSystem extends createSystem({
 
 		this.setText('hud', 'hits-val', `${this.hits}`);
 		this.setText('hud', 'misses-val', `${this.misses}`);
+
+		// Combo multiplier display
+		const streakBonus = 1 + Math.min(this.streak * 0.1, 2.0);
+		const totalMultiplier = this.difficulty.scoreMultiplier * streakBonus;
+		this.setText('hud', 'combo-val', this.streak >= 2 ? `x${totalMultiplier.toFixed(1)}` : '');
 
 		if (this.currentMode.speedMode) {
 			this.setText('hud', 'timer-val', `${Math.ceil(this.speedTimer)}s`);
@@ -1755,6 +2184,12 @@ export class GameSystem extends createSystem({
 		this.updateWindArrow(time);
 		this.updateAtmosphere(time);
 		this.updateAchievementNotify(delta);
+		this.updateShockwaves(delta);
+		this.updateStarfield(time);
+		this.updateOrbitLights(time);
+		this.updateShotgunModel();
+		this.updateMuzzleFlash(delta);
+		this.updateCameraShake(delta);
 
 		// Handle input
 		this.handleInput();
@@ -2064,6 +2499,99 @@ export class GameSystem extends createSystem({
 					this.setText('hud', 'ach-notify', '');
 				}
 			}
+		}
+	}
+
+	private updateShockwaves(delta: number) {
+		const toRemove: number[] = [];
+		for (let i = 0; i < this.shockwaves.length; i++) {
+			const sw = this.shockwaves[i];
+			sw.lifetime += delta;
+			if (sw.lifetime >= sw.maxLifetime) {
+				toRemove.push(i);
+				continue;
+			}
+			const t = sw.lifetime / sw.maxLifetime;
+			const scale = 1 + t * 12;
+			sw.ring.scale.setScalar(scale);
+			const mat = sw.ring.material as MeshBasicMaterial;
+			mat.opacity = 0.9 * (1 - t);
+		}
+		for (let i = toRemove.length - 1; i >= 0; i--) {
+			const idx = toRemove[i];
+			this.scene.remove(this.shockwaves[idx].ring);
+			this.shockwaves.splice(idx, 1);
+		}
+	}
+
+	private updateStarfield(time: number) {
+		if (!this.starfieldGroup) return;
+		for (const star of this.starfieldGroup.children) {
+			const speed = star.userData['twinkleSpeed'] as number;
+			const offset = star.userData['twinkleOffset'] as number;
+			const base = star.userData['baseOpacity'] as number;
+			if (speed !== undefined && base !== undefined) {
+				const mat = (star as Mesh).material as MeshBasicMaterial;
+				mat.opacity = base * (0.6 + 0.4 * Math.sin(time * speed + offset));
+			}
+		}
+	}
+
+	private updateOrbitLights(time: number) {
+		for (const orb of this.orbitLights) {
+			orb.angle += orb.speed * 0.016;
+			orb.mesh.position.x = Math.cos(orb.angle) * orb.radius;
+			orb.mesh.position.z = Math.sin(orb.angle) * orb.radius - 10;
+			orb.mesh.position.y = orb.height + Math.sin(time * 0.5 + orb.angle) * 1.5;
+			const mat = orb.mesh.material as MeshBasicMaterial;
+			mat.opacity = 0.4 + 0.2 * Math.sin(time * 2 + orb.angle);
+		}
+	}
+
+	private updateShotgunModel() {
+		if (!this.shotgunGroup) return;
+
+		const rightGrip = this.gameWorld.playerSpaceEntities?.gripSpaces?.right?.object3D;
+		if (rightGrip) {
+			this.shotgunGroup.visible = true;
+			rightGrip.getWorldPosition(this.shotgunGroup.position);
+			const quat = new Quaternion();
+			rightGrip.getWorldQuaternion(quat);
+			this.shotgunGroup.setRotationFromQuaternion(quat);
+		} else {
+			this.shotgunGroup.visible = false;
+		}
+	}
+
+	private updateMuzzleFlash(delta: number) {
+		if (this.muzzleFlashTimer <= 0) return;
+		this.muzzleFlashTimer -= delta;
+
+		if (this.muzzleFlashGroup) {
+			const t = Math.max(0, this.muzzleFlashTimer / 0.08);
+			for (const child of this.muzzleFlashGroup.children) {
+				if (child instanceof Mesh) {
+					(child.material as MeshBasicMaterial).opacity = 0.9 * t;
+				} else if (child instanceof PointLight) {
+					child.intensity = 3 * t;
+				}
+			}
+		}
+	}
+
+	private updateCameraShake(delta: number) {
+		if (this.cameraShakeTimer <= 0) return;
+		this.cameraShakeTimer -= delta;
+
+		if (this.cameraShakeTimer > 0) {
+			const t = this.cameraShakeTimer / 0.12;
+			const shakeX = (Math.random() - 0.5) * this.cameraShakeIntensity * t;
+			const shakeY = (Math.random() - 0.5) * this.cameraShakeIntensity * t;
+			this.crosshairGroup.position.x = shakeX;
+			this.crosshairGroup.position.y = shakeY;
+		} else {
+			this.crosshairGroup.position.x = 0;
+			this.crosshairGroup.position.y = 0;
 		}
 	}
 }

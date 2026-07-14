@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 2,
+  "sessionId": "9e99dd49-8711-433c-8dee-30092d0fe5c9",
+  "workspaceRoot": "/home/hatch/workspace/neon-skeet",
+  "pid": 22908,
+  "port": 5173,
+  "localUrl": "http://localhost:5173/",
+  "networkUrls": [
+    "http://198.19.0.2:5173/"
+  ],
+  "aiMode": "agent",
+  "browser": {
+    "status": "connected",
+    "connected": true,
+    "commandReady": false,
+    "connectedClientCount": 1,
+    "lastTransitionAt": "2026-07-14T01:04:40.995Z",
+    "lastBridgeConnectedAt": "2026-07-14T01:04:40.995Z",
+    "lastCommandReadyAt": "2026-07-14T01:03:25.980Z"
+  },
+  "registeredAt": "2026-07-14T00:58:32.314Z",
+  "updatedAt": "2026-07-14T01:04:40.996Z"
+}
