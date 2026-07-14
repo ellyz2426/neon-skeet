@@ -1,0 +1,766 @@
+{
+  "element": {
+    "sourceTag": "panel",
+    "type": "custom",
+    "children": [
+      {
+        "sourceTag": "container",
+        "type": "custom",
+        "children": [
+          {
+            "sourceTag": "text",
+            "type": "custom",
+            "children": [
+              "ROUND COMPLETE"
+            ],
+            "properties": {
+              "class": "title"
+            },
+            "dataUid": "uid-3"
+          },
+          {
+            "sourceTag": "text",
+            "type": "custom",
+            "children": [
+              "Trap"
+            ],
+            "properties": {
+              "class": "label",
+              "name": "sc-mode"
+            },
+            "dataUid": "uid-4"
+          },
+          {
+            "sourceTag": "text",
+            "type": "custom",
+            "children": [
+              "Medium"
+            ],
+            "properties": {
+              "class": "label",
+              "name": "sc-difficulty"
+            },
+            "dataUid": "uid-5"
+          },
+          {
+            "sourceTag": "text",
+            "type": "custom",
+            "children": [
+              "0"
+            ],
+            "properties": {
+              "class": "score-big",
+              "name": "sc-score"
+            },
+            "dataUid": "uid-6"
+          },
+          {
+            "sourceTag": "text",
+            "type": "custom",
+            "children": [],
+            "properties": {
+              "class": "record-text",
+              "name": "sc-record"
+            },
+            "dataUid": "uid-7"
+          },
+          {
+            "sourceTag": "container",
+            "type": "custom",
+            "children": [
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "Hits"
+                ],
+                "properties": {
+                  "class": "label"
+                },
+                "dataUid": "uid-9"
+              },
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "0/25"
+                ],
+                "properties": {
+                  "class": "value",
+                  "name": "sc-hits"
+                },
+                "dataUid": "uid-10"
+              }
+            ],
+            "properties": {
+              "class": "row"
+            },
+            "dataUid": "uid-8"
+          },
+          {
+            "sourceTag": "container",
+            "type": "custom",
+            "children": [
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "Accuracy"
+                ],
+                "properties": {
+                  "class": "label"
+                },
+                "dataUid": "uid-12"
+              },
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "0%"
+                ],
+                "properties": {
+                  "class": "value",
+                  "name": "sc-accuracy"
+                },
+                "dataUid": "uid-13"
+              }
+            ],
+            "properties": {
+              "class": "row"
+            },
+            "dataUid": "uid-11"
+          },
+          {
+            "sourceTag": "container",
+            "type": "custom",
+            "children": [
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "Best Streak"
+                ],
+                "properties": {
+                  "class": "label"
+                },
+                "dataUid": "uid-15"
+              },
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "0"
+                ],
+                "properties": {
+                  "class": "value",
+                  "name": "sc-streak"
+                },
+                "dataUid": "uid-16"
+              }
+            ],
+            "properties": {
+              "class": "row"
+            },
+            "dataUid": "uid-14"
+          },
+          {
+            "sourceTag": "container",
+            "type": "custom",
+            "children": [
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "First Shots Only"
+                ],
+                "properties": {
+                  "class": "label"
+                },
+                "dataUid": "uid-18"
+              },
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "No"
+                ],
+                "properties": {
+                  "class": "value",
+                  "name": "sc-first-shots"
+                },
+                "dataUid": "uid-19"
+              }
+            ],
+            "properties": {
+              "class": "row"
+            },
+            "dataUid": "uid-17"
+          },
+          {
+            "sourceTag": "container",
+            "type": "custom",
+            "children": [
+              {
+                "sourceTag": "container",
+                "type": "custom",
+                "children": [
+                  {
+                    "sourceTag": "text",
+                    "type": "custom",
+                    "children": [
+                      "PLAY AGAIN"
+                    ],
+                    "properties": {
+                      "class": "btn-text"
+                    },
+                    "dataUid": "uid-22"
+                  }
+                ],
+                "properties": {
+                  "class": "btn",
+                  "name": "btn-next"
+                },
+                "dataUid": "uid-21"
+              },
+              {
+                "sourceTag": "container",
+                "type": "custom",
+                "children": [
+                  {
+                    "sourceTag": "text",
+                    "type": "custom",
+                    "children": [
+                      "MENU"
+                    ],
+                    "properties": {
+                      "class": "btn-text-sec"
+                    },
+                    "dataUid": "uid-24"
+                  }
+                ],
+                "properties": {
+                  "class": "btn-sec",
+                  "name": "btn-menu-sc"
+                },
+                "dataUid": "uid-23"
+              }
+            ],
+            "properties": {
+              "class": "btn-row"
+            },
+            "dataUid": "uid-20"
+          },
+          {
+            "sourceTag": "text",
+            "type": "custom",
+            "children": [
+              "Press R or Y to retry"
+            ],
+            "properties": {
+              "class": "hint"
+            },
+            "dataUid": "uid-25"
+          }
+        ],
+        "properties": {
+          "class": "root"
+        },
+        "dataUid": "uid-2"
+      }
+    ],
+    "properties": {},
+    "dataUid": "uid-1"
+  },
+  "classes": {
+    "root": {
+      "content": {
+        "width": "500",
+        "backgroundColor": "rgba(5, 5, 20, 0.95)",
+        "borderRadius": 16,
+        "padding": "28",
+        "flexDirection": "column",
+        "alignItems": "center",
+        "gap": "12",
+        "borderColor": "#00ff88",
+        "borderWidth": "2"
+      }
+    },
+    "title": {
+      "content": {
+        "fontSize": "36",
+        "color": "#00ff88",
+        "fontWeight": "bold"
+      }
+    },
+    "record-text": {
+      "content": {
+        "fontSize": "16",
+        "color": "#ffcc00",
+        "fontWeight": "bold"
+      }
+    },
+    "row": {
+      "content": {
+        "width": "400",
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+        "paddingLeft": "10",
+        "paddingRight": "10"
+      }
+    },
+    "label": {
+      "content": {
+        "fontSize": "18",
+        "color": "#888899"
+      }
+    },
+    "value": {
+      "content": {
+        "fontSize": "18",
+        "color": "#ffffff",
+        "fontWeight": "bold"
+      }
+    },
+    "score-big": {
+      "content": {
+        "fontSize": "48",
+        "color": "#ffaa00",
+        "fontWeight": "bold"
+      }
+    },
+    "btn-row": {
+      "content": {
+        "flexDirection": "row",
+        "gap": "16",
+        "marginTop": "10"
+      }
+    },
+    "btn": {
+      "content": {
+        "width": "180",
+        "height": "48",
+        "backgroundColor": "#1a3322",
+        "borderRadius": 8,
+        "justifyContent": "center",
+        "alignItems": "center",
+        "borderColor": "#00ff88",
+        "borderWidth": "1",
+        "cursor": "pointer"
+      }
+    },
+    "btn-sec": {
+      "content": {
+        "width": "180",
+        "height": "48",
+        "backgroundColor": "#1a1a3e",
+        "borderRadius": 8,
+        "justifyContent": "center",
+        "alignItems": "center",
+        "borderColor": "#666688",
+        "borderWidth": "1",
+        "cursor": "pointer"
+      }
+    },
+    "btn-text": {
+      "content": {
+        "fontSize": "18",
+        "color": "#00ff88",
+        "fontWeight": "bold"
+      }
+    },
+    "btn-text-sec": {
+      "content": {
+        "fontSize": "18",
+        "color": "#888899"
+      }
+    },
+    "hint": {
+      "content": {
+        "fontSize": "11",
+        "color": "#444466"
+      }
+    }
+  },
+  "ranges": {
+    "uid-1": {
+      "start": {
+        "line": 0,
+        "column": 0
+      },
+      "end": {
+        "line": 117,
+        "column": 8
+      }
+    },
+    "root": {
+      "start": {
+        "line": 2,
+        "column": 4
+      },
+      "end": {
+        "line": 2,
+        "column": 9
+      }
+    },
+    "title": {
+      "start": {
+        "line": 13,
+        "column": 4
+      },
+      "end": {
+        "line": 13,
+        "column": 10
+      }
+    },
+    "record-text": {
+      "start": {
+        "line": 18,
+        "column": 4
+      },
+      "end": {
+        "line": 18,
+        "column": 16
+      }
+    },
+    "row": {
+      "start": {
+        "line": 23,
+        "column": 4
+      },
+      "end": {
+        "line": 23,
+        "column": 8
+      }
+    },
+    "label": {
+      "start": {
+        "line": 30,
+        "column": 4
+      },
+      "end": {
+        "line": 30,
+        "column": 10
+      }
+    },
+    "value": {
+      "start": {
+        "line": 34,
+        "column": 4
+      },
+      "end": {
+        "line": 34,
+        "column": 10
+      }
+    },
+    "score-big": {
+      "start": {
+        "line": 39,
+        "column": 4
+      },
+      "end": {
+        "line": 39,
+        "column": 14
+      }
+    },
+    "btn-row": {
+      "start": {
+        "line": 44,
+        "column": 4
+      },
+      "end": {
+        "line": 44,
+        "column": 12
+      }
+    },
+    "btn": {
+      "start": {
+        "line": 49,
+        "column": 4
+      },
+      "end": {
+        "line": 49,
+        "column": 8
+      }
+    },
+    "btn-sec": {
+      "start": {
+        "line": 60,
+        "column": 4
+      },
+      "end": {
+        "line": 60,
+        "column": 12
+      }
+    },
+    "btn-text": {
+      "start": {
+        "line": 71,
+        "column": 4
+      },
+      "end": {
+        "line": 71,
+        "column": 13
+      }
+    },
+    "btn-text-sec": {
+      "start": {
+        "line": 76,
+        "column": 4
+      },
+      "end": {
+        "line": 76,
+        "column": 17
+      }
+    },
+    "hint": {
+      "start": {
+        "line": 80,
+        "column": 4
+      },
+      "end": {
+        "line": 80,
+        "column": 9
+      }
+    },
+    "uid-2": {
+      "start": {
+        "line": 85,
+        "column": 2
+      },
+      "end": {
+        "line": 116,
+        "column": 14
+      }
+    },
+    "uid-3": {
+      "start": {
+        "line": 86,
+        "column": 4
+      },
+      "end": {
+        "line": 86,
+        "column": 45
+      }
+    },
+    "uid-4": {
+      "start": {
+        "line": 87,
+        "column": 4
+      },
+      "end": {
+        "line": 87,
+        "column": 50
+      }
+    },
+    "uid-5": {
+      "start": {
+        "line": 88,
+        "column": 4
+      },
+      "end": {
+        "line": 88,
+        "column": 58
+      }
+    },
+    "uid-6": {
+      "start": {
+        "line": 89,
+        "column": 4
+      },
+      "end": {
+        "line": 89,
+        "column": 52
+      }
+    },
+    "uid-7": {
+      "start": {
+        "line": 90,
+        "column": 4
+      },
+      "end": {
+        "line": 90,
+        "column": 54
+      }
+    },
+    "uid-8": {
+      "start": {
+        "line": 91,
+        "column": 4
+      },
+      "end": {
+        "line": 94,
+        "column": 16
+      }
+    },
+    "uid-9": {
+      "start": {
+        "line": 92,
+        "column": 6
+      },
+      "end": {
+        "line": 92,
+        "column": 37
+      }
+    },
+    "uid-10": {
+      "start": {
+        "line": 93,
+        "column": 6
+      },
+      "end": {
+        "line": 93,
+        "column": 52
+      }
+    },
+    "uid-11": {
+      "start": {
+        "line": 95,
+        "column": 4
+      },
+      "end": {
+        "line": 98,
+        "column": 16
+      }
+    },
+    "uid-12": {
+      "start": {
+        "line": 96,
+        "column": 6
+      },
+      "end": {
+        "line": 96,
+        "column": 41
+      }
+    },
+    "uid-13": {
+      "start": {
+        "line": 97,
+        "column": 6
+      },
+      "end": {
+        "line": 97,
+        "column": 54
+      }
+    },
+    "uid-14": {
+      "start": {
+        "line": 99,
+        "column": 4
+      },
+      "end": {
+        "line": 102,
+        "column": 16
+      }
+    },
+    "uid-15": {
+      "start": {
+        "line": 100,
+        "column": 6
+      },
+      "end": {
+        "line": 100,
+        "column": 44
+      }
+    },
+    "uid-16": {
+      "start": {
+        "line": 101,
+        "column": 6
+      },
+      "end": {
+        "line": 101,
+        "column": 51
+      }
+    },
+    "uid-17": {
+      "start": {
+        "line": 103,
+        "column": 4
+      },
+      "end": {
+        "line": 106,
+        "column": 16
+      }
+    },
+    "uid-18": {
+      "start": {
+        "line": 104,
+        "column": 6
+      },
+      "end": {
+        "line": 104,
+        "column": 49
+      }
+    },
+    "uid-19": {
+      "start": {
+        "line": 105,
+        "column": 6
+      },
+      "end": {
+        "line": 105,
+        "column": 57
+      }
+    },
+    "uid-20": {
+      "start": {
+        "line": 107,
+        "column": 4
+      },
+      "end": {
+        "line": 114,
+        "column": 16
+      }
+    },
+    "uid-21": {
+      "start": {
+        "line": 108,
+        "column": 6
+      },
+      "end": {
+        "line": 110,
+        "column": 18
+      }
+    },
+    "uid-22": {
+      "start": {
+        "line": 109,
+        "column": 8
+      },
+      "end": {
+        "line": 109,
+        "column": 48
+      }
+    },
+    "uid-23": {
+      "start": {
+        "line": 111,
+        "column": 6
+      },
+      "end": {
+        "line": 113,
+        "column": 18
+      }
+    },
+    "uid-24": {
+      "start": {
+        "line": 112,
+        "column": 8
+      },
+      "end": {
+        "line": 112,
+        "column": 46
+      }
+    },
+    "uid-25": {
+      "start": {
+        "line": 115,
+        "column": 4
+      },
+      "end": {
+        "line": 115,
+        "column": 51
+      }
+    }
+  }
+}

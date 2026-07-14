@@ -1,0 +1,772 @@
+{
+  "element": {
+    "sourceTag": "panel",
+    "type": "custom",
+    "children": [
+      {
+        "sourceTag": "container",
+        "type": "custom",
+        "children": [
+          {
+            "sourceTag": "text",
+            "type": "custom",
+            "children": [
+              "SELECT MODE"
+            ],
+            "properties": {
+              "class": "title"
+            },
+            "dataUid": "uid-3"
+          },
+          {
+            "sourceTag": "container",
+            "type": "custom",
+            "children": [
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "Trap"
+                ],
+                "properties": {
+                  "class": "mode-name"
+                },
+                "dataUid": "uid-5"
+              },
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "Classic 25-target trap. 5 stations, 5 targets each."
+                ],
+                "properties": {
+                  "class": "mode-desc"
+                },
+                "dataUid": "uid-6"
+              },
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "No score yet"
+                ],
+                "properties": {
+                  "class": "mode-best",
+                  "name": "best-trap"
+                },
+                "dataUid": "uid-7"
+              }
+            ],
+            "properties": {
+              "class": "mode-btn",
+              "name": "mode-trap"
+            },
+            "dataUid": "uid-4"
+          },
+          {
+            "sourceTag": "container",
+            "type": "custom",
+            "children": [
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "Double Trap"
+                ],
+                "properties": {
+                  "class": "mode-name"
+                },
+                "dataUid": "uid-9"
+              },
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "Two targets launched at once. Hit both!"
+                ],
+                "properties": {
+                  "class": "mode-desc"
+                },
+                "dataUid": "uid-10"
+              },
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "No score yet"
+                ],
+                "properties": {
+                  "class": "mode-best",
+                  "name": "best-double_trap"
+                },
+                "dataUid": "uid-11"
+              }
+            ],
+            "properties": {
+              "class": "mode-btn",
+              "name": "mode-double_trap"
+            },
+            "dataUid": "uid-8"
+          },
+          {
+            "sourceTag": "container",
+            "type": "custom",
+            "children": [
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "Skeet"
+                ],
+                "properties": {
+                  "class": "mode-name"
+                },
+                "dataUid": "uid-13"
+              },
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "Crossing targets from high and low houses. 8 stations."
+                ],
+                "properties": {
+                  "class": "mode-desc"
+                },
+                "dataUid": "uid-14"
+              },
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "No score yet"
+                ],
+                "properties": {
+                  "class": "mode-best",
+                  "name": "best-skeet"
+                },
+                "dataUid": "uid-15"
+              }
+            ],
+            "properties": {
+              "class": "mode-btn",
+              "name": "mode-skeet"
+            },
+            "dataUid": "uid-12"
+          },
+          {
+            "sourceTag": "container",
+            "type": "custom",
+            "children": [
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "Speed Round"
+                ],
+                "properties": {
+                  "class": "mode-name"
+                },
+                "dataUid": "uid-17"
+              },
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "Rapid fire! Targets accelerate. 90 second time limit."
+                ],
+                "properties": {
+                  "class": "mode-desc"
+                },
+                "dataUid": "uid-18"
+              },
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "No score yet"
+                ],
+                "properties": {
+                  "class": "mode-best",
+                  "name": "best-speed"
+                },
+                "dataUid": "uid-19"
+              }
+            ],
+            "properties": {
+              "class": "mode-btn",
+              "name": "mode-speed"
+            },
+            "dataUid": "uid-16"
+          },
+          {
+            "sourceTag": "container",
+            "type": "custom",
+            "children": [
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "Sporting Clays"
+                ],
+                "properties": {
+                  "class": "mode-name"
+                },
+                "dataUid": "uid-21"
+              },
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "Varied trajectories from all directions."
+                ],
+                "properties": {
+                  "class": "mode-desc"
+                },
+                "dataUid": "uid-22"
+              },
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "No score yet"
+                ],
+                "properties": {
+                  "class": "mode-best",
+                  "name": "best-sporting"
+                },
+                "dataUid": "uid-23"
+              }
+            ],
+            "properties": {
+              "class": "mode-btn",
+              "name": "mode-sporting"
+            },
+            "dataUid": "uid-20"
+          },
+          {
+            "sourceTag": "container",
+            "type": "custom",
+            "children": [
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "Practice Range"
+                ],
+                "properties": {
+                  "class": "mode-name"
+                },
+                "dataUid": "uid-25"
+              },
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "Endless targets, no scoring. Warm up freely."
+                ],
+                "properties": {
+                  "class": "mode-desc"
+                },
+                "dataUid": "uid-26"
+              },
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "No scoring — just shoot!"
+                ],
+                "properties": {
+                  "class": "mode-best",
+                  "name": "best-practice"
+                },
+                "dataUid": "uid-27"
+              }
+            ],
+            "properties": {
+              "class": "mode-btn",
+              "name": "mode-practice"
+            },
+            "dataUid": "uid-24"
+          },
+          {
+            "sourceTag": "container",
+            "type": "custom",
+            "children": [
+              {
+                "sourceTag": "text",
+                "type": "custom",
+                "children": [
+                  "BACK"
+                ],
+                "properties": {
+                  "class": "back-text"
+                },
+                "dataUid": "uid-29"
+              }
+            ],
+            "properties": {
+              "class": "back-btn",
+              "name": "btn-back"
+            },
+            "dataUid": "uid-28"
+          }
+        ],
+        "properties": {
+          "class": "root"
+        },
+        "dataUid": "uid-2"
+      }
+    ],
+    "properties": {},
+    "dataUid": "uid-1"
+  },
+  "classes": {
+    "root": {
+      "content": {
+        "width": "700",
+        "backgroundColor": "rgba(5, 5, 20, 0.95)",
+        "borderRadius": 16,
+        "padding": "24",
+        "flexDirection": "column",
+        "alignItems": "center",
+        "gap": "12",
+        "borderColor": "#ff6600",
+        "borderWidth": "2"
+      }
+    },
+    "title": {
+      "content": {
+        "fontSize": "32",
+        "color": "#ff6600",
+        "fontWeight": "bold"
+      }
+    },
+    "mode-btn": {
+      "content": {
+        "width": "600",
+        "height": "78",
+        "backgroundColor": "#1a1a3e",
+        "borderRadius": 10,
+        "flexDirection": "column",
+        "justifyContent": "center",
+        "alignItems": "center",
+        "padding": "8",
+        "borderColor": "#ff6600",
+        "borderWidth": "1",
+        "cursor": "pointer",
+        "hoverBackgroundColor": "#2a2a5e"
+      }
+    },
+    "mode-name": {
+      "content": {
+        "fontSize": "22",
+        "color": "#ff8800",
+        "fontWeight": "bold"
+      }
+    },
+    "mode-desc": {
+      "content": {
+        "fontSize": "13",
+        "color": "#888899"
+      }
+    },
+    "mode-best": {
+      "content": {
+        "fontSize": "11",
+        "color": "#556677"
+      }
+    },
+    "back-btn": {
+      "content": {
+        "width": "200",
+        "height": "44",
+        "backgroundColor": "#1a1a3e",
+        "borderRadius": 8,
+        "justifyContent": "center",
+        "alignItems": "center",
+        "borderColor": "#666688",
+        "borderWidth": "1",
+        "cursor": "pointer",
+        "marginTop": "8"
+      }
+    },
+    "back-text": {
+      "content": {
+        "fontSize": "18",
+        "color": "#888899"
+      }
+    }
+  },
+  "ranges": {
+    "uid-1": {
+      "start": {
+        "line": 0,
+        "column": 0
+      },
+      "end": {
+        "line": 98,
+        "column": 8
+      }
+    },
+    "root": {
+      "start": {
+        "line": 2,
+        "column": 4
+      },
+      "end": {
+        "line": 2,
+        "column": 9
+      }
+    },
+    "title": {
+      "start": {
+        "line": 13,
+        "column": 4
+      },
+      "end": {
+        "line": 13,
+        "column": 10
+      }
+    },
+    "mode-btn": {
+      "start": {
+        "line": 18,
+        "column": 4
+      },
+      "end": {
+        "line": 18,
+        "column": 13
+      }
+    },
+    "mode-name": {
+      "start": {
+        "line": 32,
+        "column": 4
+      },
+      "end": {
+        "line": 32,
+        "column": 14
+      }
+    },
+    "mode-desc": {
+      "start": {
+        "line": 37,
+        "column": 4
+      },
+      "end": {
+        "line": 37,
+        "column": 14
+      }
+    },
+    "mode-best": {
+      "start": {
+        "line": 41,
+        "column": 4
+      },
+      "end": {
+        "line": 41,
+        "column": 14
+      }
+    },
+    "back-btn": {
+      "start": {
+        "line": 45,
+        "column": 4
+      },
+      "end": {
+        "line": 45,
+        "column": 13
+      }
+    },
+    "back-text": {
+      "start": {
+        "line": 57,
+        "column": 4
+      },
+      "end": {
+        "line": 57,
+        "column": 14
+      }
+    },
+    "uid-2": {
+      "start": {
+        "line": 62,
+        "column": 2
+      },
+      "end": {
+        "line": 97,
+        "column": 14
+      }
+    },
+    "uid-3": {
+      "start": {
+        "line": 63,
+        "column": 4
+      },
+      "end": {
+        "line": 63,
+        "column": 42
+      }
+    },
+    "uid-4": {
+      "start": {
+        "line": 64,
+        "column": 4
+      },
+      "end": {
+        "line": 68,
+        "column": 16
+      }
+    },
+    "uid-5": {
+      "start": {
+        "line": 65,
+        "column": 6
+      },
+      "end": {
+        "line": 65,
+        "column": 41
+      }
+    },
+    "uid-6": {
+      "start": {
+        "line": 66,
+        "column": 6
+      },
+      "end": {
+        "line": 66,
+        "column": 88
+      }
+    },
+    "uid-7": {
+      "start": {
+        "line": 67,
+        "column": 6
+      },
+      "end": {
+        "line": 67,
+        "column": 66
+      }
+    },
+    "uid-8": {
+      "start": {
+        "line": 69,
+        "column": 4
+      },
+      "end": {
+        "line": 73,
+        "column": 16
+      }
+    },
+    "uid-9": {
+      "start": {
+        "line": 70,
+        "column": 6
+      },
+      "end": {
+        "line": 70,
+        "column": 48
+      }
+    },
+    "uid-10": {
+      "start": {
+        "line": 71,
+        "column": 6
+      },
+      "end": {
+        "line": 71,
+        "column": 76
+      }
+    },
+    "uid-11": {
+      "start": {
+        "line": 72,
+        "column": 6
+      },
+      "end": {
+        "line": 72,
+        "column": 73
+      }
+    },
+    "uid-12": {
+      "start": {
+        "line": 74,
+        "column": 4
+      },
+      "end": {
+        "line": 78,
+        "column": 16
+      }
+    },
+    "uid-13": {
+      "start": {
+        "line": 75,
+        "column": 6
+      },
+      "end": {
+        "line": 75,
+        "column": 42
+      }
+    },
+    "uid-14": {
+      "start": {
+        "line": 76,
+        "column": 6
+      },
+      "end": {
+        "line": 76,
+        "column": 91
+      }
+    },
+    "uid-15": {
+      "start": {
+        "line": 77,
+        "column": 6
+      },
+      "end": {
+        "line": 77,
+        "column": 67
+      }
+    },
+    "uid-16": {
+      "start": {
+        "line": 79,
+        "column": 4
+      },
+      "end": {
+        "line": 83,
+        "column": 16
+      }
+    },
+    "uid-17": {
+      "start": {
+        "line": 80,
+        "column": 6
+      },
+      "end": {
+        "line": 80,
+        "column": 48
+      }
+    },
+    "uid-18": {
+      "start": {
+        "line": 81,
+        "column": 6
+      },
+      "end": {
+        "line": 81,
+        "column": 90
+      }
+    },
+    "uid-19": {
+      "start": {
+        "line": 82,
+        "column": 6
+      },
+      "end": {
+        "line": 82,
+        "column": 67
+      }
+    },
+    "uid-20": {
+      "start": {
+        "line": 84,
+        "column": 4
+      },
+      "end": {
+        "line": 88,
+        "column": 16
+      }
+    },
+    "uid-21": {
+      "start": {
+        "line": 85,
+        "column": 6
+      },
+      "end": {
+        "line": 85,
+        "column": 51
+      }
+    },
+    "uid-22": {
+      "start": {
+        "line": 86,
+        "column": 6
+      },
+      "end": {
+        "line": 86,
+        "column": 77
+      }
+    },
+    "uid-23": {
+      "start": {
+        "line": 87,
+        "column": 6
+      },
+      "end": {
+        "line": 87,
+        "column": 70
+      }
+    },
+    "uid-24": {
+      "start": {
+        "line": 89,
+        "column": 4
+      },
+      "end": {
+        "line": 93,
+        "column": 16
+      }
+    },
+    "uid-25": {
+      "start": {
+        "line": 90,
+        "column": 6
+      },
+      "end": {
+        "line": 90,
+        "column": 51
+      }
+    },
+    "uid-26": {
+      "start": {
+        "line": 91,
+        "column": 6
+      },
+      "end": {
+        "line": 91,
+        "column": 81
+      }
+    },
+    "uid-27": {
+      "start": {
+        "line": 92,
+        "column": 6
+      },
+      "end": {
+        "line": 92,
+        "column": 82
+      }
+    },
+    "uid-28": {
+      "start": {
+        "line": 94,
+        "column": 4
+      },
+      "end": {
+        "line": 96,
+        "column": 16
+      }
+    },
+    "uid-29": {
+      "start": {
+        "line": 95,
+        "column": 6
+      },
+      "end": {
+        "line": 95,
+        "column": 41
+      }
+    }
+  }
+}
