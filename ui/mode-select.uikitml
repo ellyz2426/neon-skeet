@@ -18,7 +18,7 @@
     }
     .mode-btn {
       width: 600;
-      height: 70;
+      height: 78;
       background-color: #1a1a3e;
       border-radius: 10;
       flex-direction: column;
@@ -38,6 +38,10 @@
     .mode-desc {
       font-size: 13;
       color: #888899;
+    }
+    .mode-best {
+      font-size: 11;
+      color: #556677;
     }
     .back-btn {
       width: 200;
@@ -61,22 +65,27 @@
     <container class="mode-btn" name="mode-trap">
       <text class="mode-name">Trap</text>
       <text class="mode-desc">Classic 25-target trap. 5 stations, 5 targets each.</text>
+      <text class="mode-best" name="best-trap">No score yet</text>
     </container>
     <container class="mode-btn" name="mode-double_trap">
       <text class="mode-name">Double Trap</text>
       <text class="mode-desc">Two targets launched at once. Hit both!</text>
+      <text class="mode-best" name="best-double_trap">No score yet</text>
     </container>
     <container class="mode-btn" name="mode-skeet">
       <text class="mode-name">Skeet</text>
       <text class="mode-desc">Crossing targets from high and low houses. 8 stations.</text>
+      <text class="mode-best" name="best-skeet">No score yet</text>
     </container>
     <container class="mode-btn" name="mode-speed">
       <text class="mode-name">Speed Round</text>
       <text class="mode-desc">Rapid fire! Targets accelerate. 90 second time limit.</text>
+      <text class="mode-best" name="best-speed">No score yet</text>
     </container>
     <container class="mode-btn" name="mode-sporting">
       <text class="mode-name">Sporting Clays</text>
       <text class="mode-desc">Varied trajectories from all directions.</text>
+      <text class="mode-best" name="best-sporting">No score yet</text>
     </container>
     <container class="back-btn" name="btn-back">
       <text class="back-text">BACK</text>

@@ -6,6 +6,7 @@ import {
 	UIKitDocument,
 	UIKit,
 	Follower,
+	ScreenSpace,
 	Entity,
 	Mesh,
 	Group,
@@ -27,6 +28,7 @@ import {
 	AmbientLight,
 	PointLight,
 	DirectionalLight,
+	SpotLight,
 	Fog,
 	Raycaster,
 	Vector2,
@@ -44,10 +46,11 @@ import {
 	Achievement,
 	getStationPositions,
 	getLaunchConfig,
+	getPigeonColors,
 } from './data';
 
 // ===== Types =====
-type GamePhase = 'menu' | 'mode_select' | 'playing' | 'round_end' | 'game_over' | 'settings' | 'achievements';
+type GamePhase = 'menu' | 'mode_select' | 'playing' | 'round_end' | 'game_over' | 'settings' | 'achievements' | 'stats';
 
 interface ActivePigeon {
 	group: Group;
@@ -57,6 +60,7 @@ interface ActivePigeon {
 	lifetime: number;
 	maxLifetime: number;
 	hitFlash: number;
+	trailTimer: number;
 }
 
 interface Particle {
@@ -71,6 +75,12 @@ interface TracerLine {
 	lifetime: number;
 }
 
+interface FloatingText {
+	group: Group;
+	lifetime: number;
+	maxLifetime: number;
+}
+
 interface SaveData {
 	totalHits: number;
 	totalShots: number;
@@ -81,6 +91,8 @@ interface SaveData {
 	modesPlayed: string[];
 	difficulty: string;
 	sfxVolume: number;
+	totalPlayTime: number;
+	longestSession: number;
 }
 
 // ===== Main Game System =====
@@ -92,6 +104,7 @@ export class GameSystem extends createSystem({
 	gameOver: { required: [PanelUI, PanelDocument], where: [eq(PanelUI, 'config', './ui/game-over.json')] },
 	settingsPanel: { required: [PanelUI, PanelDocument], where: [eq(PanelUI, 'config', './ui/settings.json')] },
 	achievementsPanel: { required: [PanelUI, PanelDocument], where: [eq(PanelUI, 'config', './ui/achlist.json')] },
+	statsPanel: { required: [PanelUI, PanelDocument], where: [eq(PanelUI, 'config', './ui/stats.json')] },
 }) {
 	// World refs
 	private gameWorld!: World;
@@ -125,15 +138,23 @@ export class GameSystem extends createSystem({
 	private doublesActive: ActivePigeon[] = [];
 	private windX = 0;
 	private windZ = 0;
+	private noMissCount = 0; // consecutive shots where pigeon was hit (for no_miss_streak achievement)
+	private speed30sHits = 0;
+	private speed30sTracked = false;
+	private skeetFirstHits: Set<number> = new Set();
+	private sessionStartTime = 0;
+	private roundStartTime = 0;
 
 	// Entities
 	private pigeons: ActivePigeon[] = [];
 	private particles: Particle[] = [];
 	private tracers: TracerLine[] = [];
+	private floatingTexts: FloatingText[] = [];
 	private environmentGroup!: Group;
 	private trapHouseEntities: Group[] = [];
 	private stationMarkers: Group[] = [];
 	private crosshairGroup!: Group;
+	private windArrow!: Group;
 
 	// UI panel entities
 	private mainMenuEntity: Entity | null = null;
@@ -143,17 +164,26 @@ export class GameSystem extends createSystem({
 	private gameOverEntity: Entity | null = null;
 	private settingsEntity: Entity | null = null;
 	private achievementsEntity: Entity | null = null;
+	private statsEntity: Entity | null = null;
 	private panelDocs: Map<string, UIKitDocument> = new Map();
 
 	// Browser mouse
 	private raycaster = new Raycaster();
 	private mouse = new Vector2();
 	private mouseDown = false;
+	private keyboardState: Map<string, boolean> = new Map();
 
 	// Audio
 	private audioCtx: AudioContext | null = null;
 	private masterGain: GainNode | null = null;
 	private sfxVolume = 0.7;
+
+	// Crosshair pulse
+	private crosshairPulse = 0;
+
+	// Recent achievement display
+	private recentAchievement: string | null = null;
+	private recentAchTimer = 0;
 
 	// Save data
 	private saveData: SaveData = {
@@ -166,11 +196,14 @@ export class GameSystem extends createSystem({
 		modesPlayed: [],
 		difficulty: 'medium',
 		sfxVolume: 0.7,
+		totalPlayTime: 0,
+		longestSession: 0,
 	};
 
 	// ===== Init =====
 	initGame(world: World) {
 		this.gameWorld = world;
+		this.sessionStartTime = performance.now();
 
 		this.loadSave();
 		this.difficulty = DIFFICULTIES.find(d => d.id === this.saveData.difficulty) || DIFFICULTIES[1];
@@ -178,8 +211,10 @@ export class GameSystem extends createSystem({
 
 		this.buildEnvironment();
 		this.buildCrosshair();
+		this.buildWindArrow();
 		this.createPanels();
 		this.setupMouseListeners();
+		this.setupKeyboardListeners();
 		this.showPanel('menu');
 	}
 
@@ -197,6 +232,14 @@ export class GameSystem extends createSystem({
 		const pointLight2 = new PointLight(0xff6600, 0.8, 30);
 		pointLight2.position.set(-8, 5, -5);
 		this.scene.add(pointLight2);
+
+		// Additional rim lights for atmosphere
+		const rimLight1 = new PointLight(0x8800ff, 0.5, 50);
+		rimLight1.position.set(15, 3, -20);
+		this.scene.add(rimLight1);
+		const rimLight2 = new PointLight(0x00ff88, 0.4, 40);
+		rimLight2.position.set(-12, 6, -25);
+		this.scene.add(rimLight2);
 
 		this.scene.fog = new Fog(0x050510, 30, 80);
 
@@ -227,7 +270,7 @@ export class GameSystem extends createSystem({
 		// Skeet low house (right)
 		this.buildTrapHouse(10, 0.5, -8, 0xff0088);
 
-		// Boundary posts
+		// Boundary posts with light beacons
 		for (let i = 0; i < 8; i++) {
 			const angle = (i / 8) * Math.PI * 2;
 			const postGeo = new CylinderGeometry(0.05, 0.05, 3, 8);
@@ -239,31 +282,81 @@ export class GameSystem extends createSystem({
 			const post = new Mesh(postGeo, postMat);
 			post.position.set(Math.cos(angle) * 20, 1.5, Math.sin(angle) * 20 - 10);
 			this.environmentGroup.add(post);
+
+			// Beacon top sphere
+			const beaconGeo = new SphereGeometry(0.08, 8, 8);
+			const beaconMat = new MeshBasicMaterial({
+				color: 0x00ccff,
+				transparent: true,
+				opacity: 0.8,
+			});
+			const beacon = new Mesh(beaconGeo, beaconMat);
+			beacon.position.set(Math.cos(angle) * 20, 3, Math.sin(angle) * 20 - 10);
+			this.environmentGroup.add(beacon);
 		}
 
 		// Distant backdrop elements
-		for (let i = 0; i < 12; i++) {
-			const angle = (i / 12) * Math.PI * 2;
-			const towerGeo = new BoxGeometry(1, 8 + Math.random() * 12, 1);
+		for (let i = 0; i < 16; i++) {
+			const angle = (i / 16) * Math.PI * 2;
+			const height = 8 + Math.random() * 12;
+			const towerGeo = new BoxGeometry(1, height, 1);
 			const towerMat = new MeshStandardMaterial({
 				color: 0x111122,
 				emissive: 0x0a0a20,
 				emissiveIntensity: 0.3,
 			});
 			const tower = new Mesh(towerGeo, towerMat);
+			const dist = 35 + Math.random() * 10;
 			tower.position.set(
-				Math.cos(angle) * (35 + Math.random() * 10),
-				(4 + Math.random() * 6),
-				Math.sin(angle) * (35 + Math.random() * 10) - 10,
+				Math.cos(angle) * dist,
+				height / 2,
+				Math.sin(angle) * dist - 10,
 			);
 			this.environmentGroup.add(tower);
 
 			// Tower wireframe edge glow
 			const edges = new EdgesGeometry(towerGeo);
-			const edgeMat = new LineBasicMaterial({ color: 0x00ccff, transparent: true, opacity: 0.3 });
+			const edgeColors = [0x00ccff, 0xff6600, 0x8800ff, 0x00ff88];
+			const edgeMat = new LineBasicMaterial({ color: edgeColors[i % edgeColors.length], transparent: true, opacity: 0.3 });
 			const wireframe = new LineSegments(edges, edgeMat);
 			wireframe.position.copy(tower.position);
 			this.environmentGroup.add(wireframe);
+
+			// Random window lights
+			if (Math.random() > 0.5) {
+				const windowGeo = new BoxGeometry(0.3, 0.2, 0.01);
+				const windowMat = new MeshBasicMaterial({
+					color: edgeColors[i % edgeColors.length],
+					transparent: true,
+					opacity: 0.4 + Math.random() * 0.4,
+				});
+				const windowMesh = new Mesh(windowGeo, windowMat);
+				windowMesh.position.set(
+					tower.position.x + (Math.random() > 0.5 ? 0.51 : -0.51),
+					tower.position.y - height / 2 + Math.random() * height,
+					tower.position.z,
+				);
+				this.environmentGroup.add(windowMesh);
+			}
+		}
+
+		// Floating particles (atmospheric dust)
+		for (let i = 0; i < 30; i++) {
+			const dustGeo = new SphereGeometry(0.02, 4, 4);
+			const dustMat = new MeshBasicMaterial({
+				color: 0x00ccff,
+				transparent: true,
+				opacity: 0.15 + Math.random() * 0.15,
+			});
+			const dust = new Mesh(dustGeo, dustMat);
+			dust.position.set(
+				(Math.random() - 0.5) * 40,
+				1 + Math.random() * 8,
+				(Math.random() - 0.5) * 40 - 5,
+			);
+			dust.userData['floatSpeed'] = 0.2 + Math.random() * 0.5;
+			dust.userData['floatOffset'] = Math.random() * Math.PI * 2;
+			this.environmentGroup.add(dust);
 		}
 	}
 
@@ -330,7 +423,9 @@ export class GameSystem extends createSystem({
 
 	private buildCrosshair() {
 		this.crosshairGroup = new Group();
-		const ringGeo = new RingGeometry(0.01, 0.013, 32);
+
+		// Outer ring
+		const ringGeo = new RingGeometry(0.012, 0.015, 32);
 		const ringMat = new MeshBasicMaterial({
 			color: 0xff4400,
 			transparent: true,
@@ -340,10 +435,23 @@ export class GameSystem extends createSystem({
 		const ring = new Mesh(ringGeo, ringMat);
 		this.crosshairGroup.add(ring);
 
-		// Cross lines
-		const crossSize = 0.02;
+		// Inner dot
+		const dotGeo = new RingGeometry(0, 0.003, 16);
+		const dotMat = new MeshBasicMaterial({
+			color: 0xff6600,
+			transparent: true,
+			opacity: 0.9,
+			depthTest: false,
+		});
+		const dot = new Mesh(dotGeo, dotMat);
+		this.crosshairGroup.add(dot);
+
+		// Cross lines (thinner, more precise)
+		const crossSize = 0.022;
+		const lineThick = 0.0008;
 		for (let i = 0; i < 4; i++) {
-			const lineGeo = new BoxGeometry(i % 2 === 0 ? crossSize : 0.001, i % 2 === 0 ? 0.001 : crossSize, 0.001);
+			const isH = i % 2 === 0;
+			const lineGeo = new BoxGeometry(isH ? crossSize : lineThick, isH ? lineThick : crossSize, 0.001);
 			const lineMat = new MeshBasicMaterial({ color: 0xff4400, depthTest: false, transparent: true, opacity: 0.6 });
 			const line = new Mesh(lineGeo, lineMat);
 			this.crosshairGroup.add(line);
@@ -351,6 +459,37 @@ export class GameSystem extends createSystem({
 
 		this.crosshairGroup.position.set(0, 0, -2);
 		this.camera.add(this.crosshairGroup);
+	}
+
+	private buildWindArrow() {
+		this.windArrow = new Group();
+		this.windArrow.position.set(3, 0.3, -3);
+
+		// Arrow shaft
+		const shaftGeo = new CylinderGeometry(0.015, 0.015, 0.6, 6);
+		const shaftMat = new MeshBasicMaterial({
+			color: 0x44aaff,
+			transparent: true,
+			opacity: 0.5,
+		});
+		const shaft = new Mesh(shaftGeo, shaftMat);
+		shaft.rotation.z = Math.PI / 2;
+		this.windArrow.add(shaft);
+
+		// Arrow head (cone via narrow CylinderGeometry)
+		const headGeo = new CylinderGeometry(0, 0.04, 0.1, 8);
+		const headMat = new MeshBasicMaterial({
+			color: 0x44aaff,
+			transparent: true,
+			opacity: 0.6,
+		});
+		const head = new Mesh(headGeo, headMat);
+		head.position.set(0.35, 0, 0);
+		head.rotation.z = -Math.PI / 2;
+		this.windArrow.add(head);
+
+		this.windArrow.visible = false;
+		this.scene.add(this.windArrow);
 	}
 
 	// ===== Panel Creation =====
@@ -371,7 +510,7 @@ export class GameSystem extends createSystem({
 		modeSelOff[0] = 0; modeSelOff[1] = 0.3; modeSelOff[2] = -3;
 		this.modeSelectEntity.object3D!.visible = false;
 
-		// HUD - head-locked
+		// HUD - head-locked via ScreenSpace for browser, Follower for XR
 		this.hudEntity = this.gameWorld.createTransformEntity();
 		this.hudEntity.addComponent(PanelUI, { config: './ui/hud.json' });
 		this.hudEntity.addComponent(Follower);
@@ -411,6 +550,14 @@ export class GameSystem extends createSystem({
 		achOff[0] = 0; achOff[1] = 0.3; achOff[2] = -3;
 		this.achievementsEntity.object3D!.visible = false;
 
+		// Stats - world space
+		this.statsEntity = this.gameWorld.createTransformEntity();
+		this.statsEntity.addComponent(PanelUI, { config: './ui/stats.json' });
+		this.statsEntity.addComponent(Follower);
+		const stOff = this.statsEntity.getVectorView(Follower, 'offsetPosition');
+		stOff[0] = 0; stOff[1] = 0.3; stOff[2] = -3;
+		this.statsEntity.object3D!.visible = false;
+
 		// Wire up panel events
 		this.queries.mainMenu.subscribe('qualify', (entity) => {
 			const doc = entity.getValue(PanelDocument, 'document') as UIKitDocument;
@@ -419,6 +566,7 @@ export class GameSystem extends createSystem({
 			(doc.getElementById('btn-play') as UIKit.Text)?.addEventListener('click', () => this.showPanel('mode_select'));
 			(doc.getElementById('btn-settings') as UIKit.Text)?.addEventListener('click', () => this.showPanel('settings'));
 			(doc.getElementById('btn-achievements') as UIKit.Text)?.addEventListener('click', () => this.showPanel('achievements'));
+			(doc.getElementById('btn-stats') as UIKit.Text)?.addEventListener('click', () => this.showPanel('stats'));
 		});
 
 		this.queries.modeSelect.subscribe('qualify', (entity) => {
@@ -474,6 +622,14 @@ export class GameSystem extends createSystem({
 			(doc.getElementById('btn-back-ach') as UIKit.Text)?.addEventListener('click', () => this.showPanel('menu'));
 			this.updateAchievementsUI();
 		});
+
+		this.queries.statsPanel.subscribe('qualify', (entity) => {
+			const doc = entity.getValue(PanelDocument, 'document') as UIKitDocument;
+			if (!doc) return;
+			this.panelDocs.set('stats', doc);
+			(doc.getElementById('btn-back-stats') as UIKit.Text)?.addEventListener('click', () => this.showPanel('menu'));
+			this.updateStatsUI();
+		});
 	}
 
 	// ===== Panel Visibility =====
@@ -487,6 +643,7 @@ export class GameSystem extends createSystem({
 			game_over: this.gameOverEntity,
 			settings: this.settingsEntity,
 			achievements: this.achievementsEntity,
+			stats: this.statsEntity,
 		};
 
 		for (const [key, entity] of Object.entries(panelMap)) {
@@ -495,12 +652,26 @@ export class GameSystem extends createSystem({
 			}
 		}
 
+		// Show/hide crosshair based on phase
+		if (this.crosshairGroup) {
+			this.crosshairGroup.visible = panel === 'playing';
+		}
+
+		// Show/hide wind arrow
+		if (this.windArrow) {
+			this.windArrow.visible = panel === 'playing' && this.difficulty.windStrength > 0;
+		}
+
 		if (panel === 'menu') {
 			this.updateMenuUI();
 		} else if (panel === 'settings') {
 			this.updateSettingsUI();
 		} else if (panel === 'achievements') {
 			this.updateAchievementsUI();
+		} else if (panel === 'stats') {
+			this.updateStatsUI();
+		} else if (panel === 'mode_select') {
+			this.updateModeSelectUI();
 		}
 	}
 
@@ -531,10 +702,27 @@ export class GameSystem extends createSystem({
 		this.stationPerfect = true;
 		this.doubleStreak = 0;
 		this.autoLaunchTimer = 0;
+		this.noMissCount = 0;
+		this.speed30sHits = 0;
+		this.speed30sTracked = false;
+		this.skeetFirstHits = new Set();
+		this.roundStartTime = performance.now();
 
 		// Set wind for this round
 		this.windX = (Math.random() - 0.5) * this.difficulty.windStrength * 2;
 		this.windZ = (Math.random() - 0.5) * this.difficulty.windStrength;
+
+		// Update wind arrow orientation
+		if (this.windArrow) {
+			this.windArrow.visible = this.difficulty.windStrength > 0;
+			if (this.difficulty.windStrength > 0) {
+				const windAngle = Math.atan2(this.windZ, this.windX);
+				this.windArrow.rotation.y = -windAngle;
+				const windStrength = Math.sqrt(this.windX * this.windX + this.windZ * this.windZ);
+				const s = 0.5 + windStrength * 0.5;
+				this.windArrow.scale.set(s, s, s);
+			}
+		}
 
 		// Build station markers
 		this.clearStationMarkers();
@@ -569,6 +757,17 @@ export class GameSystem extends createSystem({
 			ring.rotation.x = -Math.PI / 2;
 			markerGroup.add(ring);
 
+			// Station number label (small sphere at center for visual reference)
+			const numGeo = new SphereGeometry(0.06, 8, 8);
+			const numMat = new MeshBasicMaterial({
+				color: i === this.currentStation ? 0x00ff88 : 0x444466,
+				transparent: true,
+				opacity: 0.8,
+			});
+			const numMesh = new Mesh(numGeo, numMat);
+			numMesh.position.y = 0.06;
+			markerGroup.add(numMesh);
+
 			this.scene.add(markerGroup);
 			this.stationMarkers.push(markerGroup);
 		}
@@ -586,7 +785,12 @@ export class GameSystem extends createSystem({
 			const marker = this.stationMarkers[i];
 			const ring = marker.children[0] as Mesh;
 			if (ring && ring.material instanceof MeshBasicMaterial) {
-				ring.material.color.setHex(i === this.currentStation ? 0x00ff88 : 0x444466);
+				ring.material.color.setHex(i === this.currentStation ? 0x00ff88 : (i < this.currentStation ? 0x226622 : 0x444466));
+			}
+			// Update number sphere color too
+			const numSphere = marker.children[1] as Mesh;
+			if (numSphere && numSphere.material instanceof MeshBasicMaterial) {
+				numSphere.material.color.setHex(i === this.currentStation ? 0x00ff88 : (i < this.currentStation ? 0x226622 : 0x444466));
 			}
 		}
 	}
@@ -602,17 +806,18 @@ export class GameSystem extends createSystem({
 
 		const launches = getLaunchConfig(this.currentMode.id, this.currentStation);
 		const pigeonCount = this.currentMode.doubles ? 2 : 1;
+		const colors = getPigeonColors(this.currentMode.id);
 
 		for (let p = 0; p < Math.min(pigeonCount, launches.length === 1 ? pigeonCount : launches.length); p++) {
 			const config = launches[Math.min(p, launches.length - 1)];
 			const speed = this.difficulty.pigeonSpeed * config.speed * this.speedPigeonSpeed;
 
-			// Create pigeon mesh
+			// Create pigeon mesh with mode-specific colors
 			const pigeonGroup = new Group();
 			const discGeo = new TorusGeometry(0.15 * this.difficulty.pigeonScale, 0.04 * this.difficulty.pigeonScale, 8, 24);
 			const discMat = new MeshStandardMaterial({
-				color: 0xff6600,
-				emissive: 0xff4400,
+				color: colors.body,
+				emissive: colors.emissive,
 				emissiveIntensity: 0.8,
 				metalness: 0.3,
 				roughness: 0.4,
@@ -624,8 +829,8 @@ export class GameSystem extends createSystem({
 			// Inner disc
 			const innerGeo = new CylinderGeometry(0.12 * this.difficulty.pigeonScale, 0.12 * this.difficulty.pigeonScale, 0.02, 16);
 			const innerMat = new MeshStandardMaterial({
-				color: 0xff8800,
-				emissive: 0xff6600,
+				color: colors.body,
+				emissive: colors.emissive,
 				emissiveIntensity: 0.6,
 			});
 			const inner = new Mesh(innerGeo, innerMat);
@@ -633,10 +838,20 @@ export class GameSystem extends createSystem({
 
 			// Wireframe
 			const edges = new EdgesGeometry(discGeo);
-			const edgeMat = new LineBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0.5 });
+			const edgeMat = new LineBasicMaterial({ color: colors.ring, transparent: true, opacity: 0.5 });
 			const wireframe = new LineSegments(edges, edgeMat);
 			wireframe.rotation.x = Math.PI / 2;
 			pigeonGroup.add(wireframe);
+
+			// Glow sphere around pigeon for visibility
+			const glowGeo = new SphereGeometry(0.2 * this.difficulty.pigeonScale, 8, 8);
+			const glowMat = new MeshBasicMaterial({
+				color: colors.emissive,
+				transparent: true,
+				opacity: 0.15,
+			});
+			const glow = new Mesh(glowGeo, glowMat);
+			pigeonGroup.add(glow);
 
 			// Position at launch origin
 			const origin = config.origin;
@@ -665,6 +880,7 @@ export class GameSystem extends createSystem({
 				lifetime: 0,
 				maxLifetime: 5,
 				hitFlash: 0,
+				trailTimer: 0,
 			};
 
 			this.pigeons.push(pigeon);
@@ -713,6 +929,13 @@ export class GameSystem extends createSystem({
 		this.roundComplete = true;
 		this.roundScore = this.score;
 
+		// Update play time
+		const roundTime = (performance.now() - this.roundStartTime) / 1000 / 60; // minutes
+		this.saveData.totalPlayTime += roundTime;
+		if (roundTime > this.saveData.longestSession) {
+			this.saveData.longestSession = roundTime;
+		}
+
 		// Update stats
 		this.saveData.totalHits += this.hits;
 		this.saveData.totalShots += this.hits + this.misses;
@@ -729,18 +952,46 @@ export class GameSystem extends createSystem({
 			this.saveData.modesPlayed.push(modeId);
 		}
 
-		// Check achievements
+		// ===== Achievement Checks (comprehensive) =====
 		const total = this.hits + this.misses;
-		if (total > 0 && this.hits === total) this.checkAchievement('perfect_round');
-		if (this.allFirstShotsOnly) this.checkAchievement('one_shot');
-		if (this.saveData.modesPlayed.length >= GAME_MODES.length) this.checkAchievement('all_modes');
+
+		// Perfect round variations
+		if (total > 0 && this.hits === total) {
+			this.checkAchievement('perfect_round');
+			if (this.difficulty.id === 'hard') this.checkAchievement('hard_perfect');
+			if (this.difficulty.id === 'expert') this.checkAchievement('expert_perfect');
+			if (this.difficulty.windStrength > 0) this.checkAchievement('wind_master');
+			if (this.currentMode.id === 'sporting') this.checkAchievement('sporting_sweep');
+			if (this.currentMode.id === 'double_trap') this.checkAchievement('double_clean');
+		}
+
+		// Skeet full circuit
+		if (this.currentMode.id === 'skeet' && this.skeetFirstHits.size >= this.currentMode.stations) {
+			this.checkAchievement('skeet_all_stations');
+		}
+
+		// Score milestones
 		if (this.score >= 1000) this.checkAchievement('score_1000');
 		if (this.score >= 2500) this.checkAchievement('score_2500');
+		if (this.score >= 5000) this.checkAchievement('score_5000');
+		if (this.difficulty.id === 'expert' && this.score >= 3000) this.checkAchievement('expert_score_3000');
+
+		// First shots
+		if (this.allFirstShotsOnly) this.checkAchievement('one_shot');
+
+		// Mode/round milestones
+		if (this.saveData.modesPlayed.length >= GAME_MODES.length) this.checkAchievement('all_modes');
 		if (this.saveData.totalRounds >= 10) this.checkAchievement('rounds_10');
 		if (this.saveData.totalRounds >= 25) this.checkAchievement('rounds_25');
-		if (this.difficulty.id === 'hard' && this.hits === total && total > 0) this.checkAchievement('hard_perfect');
-		if (this.currentMode.speedMode && this.speedPigeonsHit >= 20) this.checkAchievement('speed_20');
-		if (this.currentMode.speedMode && this.speedPigeonsHit >= 40) this.checkAchievement('speed_40');
+		if (this.saveData.totalRounds >= 50) this.checkAchievement('rounds_50');
+
+		// Speed mode milestones
+		if (this.currentMode.speedMode) {
+			if (this.speedPigeonsHit >= 20) this.checkAchievement('speed_20');
+			if (this.speedPigeonsHit >= 40) this.checkAchievement('speed_40');
+		}
+
+		// Total hit milestones
 		this.checkTotalAchievements();
 
 		this.saveSave();
@@ -761,6 +1012,7 @@ export class GameSystem extends createSystem({
 			// Pull trigger launches pigeon
 			if (this.waitingForPull) {
 				this.launchPigeon();
+				this.playSound('pull');
 			}
 			return;
 		}
@@ -771,6 +1023,9 @@ export class GameSystem extends createSystem({
 		if (this.shotsThisTarget > 1) {
 			this.allFirstShotsOnly = false;
 		}
+
+		// Crosshair kick effect
+		this.crosshairPulse = 0.2;
 
 		// Raycast for hit detection
 		const hitPigeon = this.checkHit();
@@ -845,6 +1100,7 @@ export class GameSystem extends createSystem({
 		pigeon.hitFlash = 0.3;
 		this.hits++;
 		this.streak++;
+		this.noMissCount++;
 		if (this.streak > this.bestStreak) this.bestStreak = this.streak;
 
 		// Scoring: base 100 * difficulty multiplier * streak bonus
@@ -853,8 +1109,27 @@ export class GameSystem extends createSystem({
 		const points = Math.floor(100 * this.difficulty.scoreMultiplier * streakBonus * firstShotBonus);
 		this.score += points;
 
+		// Spawn floating score text
+		this.spawnFloatingScore(pigeon.group.position.clone(), points);
+
 		if (this.currentMode.speedMode) {
 			this.speedPigeonsHit++;
+			// Track first 30s hits
+			const elapsed = this.currentMode.timeLimit - this.speedTimer;
+			if (elapsed <= 30 && !this.speed30sTracked) {
+				this.speed30sHits++;
+			}
+			if (elapsed > 30 && !this.speed30sTracked) {
+				this.speed30sTracked = true;
+				if (this.speed30sHits >= 10) {
+					this.checkAchievement('speed_30s_10');
+				}
+			}
+		}
+
+		// Skeet first-shot tracking per station
+		if (this.currentMode.id === 'skeet' && this.shotsThisTarget === 1) {
+			this.skeetFirstHits.add(this.currentStation);
 		}
 
 		// Doubles tracking
@@ -865,6 +1140,7 @@ export class GameSystem extends createSystem({
 				this.doubleStreak++;
 				if (this.doubleStreak >= 5) this.checkAchievement('double_ace');
 				this.score += 50; // Bonus for double hit
+				this.spawnFloatingScore(pigeon.group.position.clone().add(new Vector3(0, 0.3, 0)), 50);
 			}
 		}
 
@@ -873,10 +1149,8 @@ export class GameSystem extends createSystem({
 		if (this.streak >= 5) this.checkAchievement('streak_5');
 		if (this.streak >= 10) this.checkAchievement('streak_10');
 		if (this.streak >= 25) this.checkAchievement('streak_25');
-		if (this.saveData.totalHits + this.hits >= 50) this.checkAchievement('total_50');
-		if (this.saveData.totalHits + this.hits >= 100) this.checkAchievement('total_100');
-		if (this.saveData.totalHits + this.hits >= 250) this.checkAchievement('total_250');
-		if (this.saveData.totalHits + this.hits >= 500) this.checkAchievement('total_500');
+		if (this.noMissCount >= 15) this.checkAchievement('no_miss_streak_15');
+		this.checkTotalAchievements();
 
 		// Particle explosion
 		this.spawnShatterParticles(pigeon.group.position.clone());
@@ -894,6 +1168,7 @@ export class GameSystem extends createSystem({
 		pigeon.alive = false;
 		this.misses++;
 		this.streak = 0;
+		this.noMissCount = 0;
 		this.stationPerfect = false;
 		if (this.currentMode.doubles) {
 			this.doubleStreak = 0;
@@ -907,15 +1182,55 @@ export class GameSystem extends createSystem({
 		}
 	}
 
+	// ===== Floating Score Text =====
+	private spawnFloatingScore(pos: Vector3, points: number) {
+		const group = new Group();
+		group.position.copy(pos);
+
+		// Create a small glowing orb to represent score (since we can't render text in 3D easily)
+		const colors = points >= 200 ? 0xffcc00 : (points >= 150 ? 0x00ff88 : 0x00ccff);
+
+		// Score indicator: expanding ring
+		const ringGeo = new RingGeometry(0.05, 0.08, 16);
+		const ringMat = new MeshBasicMaterial({
+			color: colors,
+			transparent: true,
+			opacity: 0.9,
+			depthTest: false,
+		});
+		const ring = new Mesh(ringGeo, ringMat);
+		ring.lookAt(this.camera.position);
+		group.add(ring);
+
+		// Central glow
+		const glowGeo = new SphereGeometry(0.04, 8, 8);
+		const glowMat = new MeshBasicMaterial({
+			color: colors,
+			transparent: true,
+			opacity: 0.8,
+		});
+		const glow = new Mesh(glowGeo, glowMat);
+		group.add(glow);
+
+		this.scene.add(group);
+		this.floatingTexts.push({
+			group,
+			lifetime: 0,
+			maxLifetime: 0.8,
+		});
+	}
+
 	// ===== Particles =====
 	private spawnShatterParticles(pos: Vector3) {
-		const count = 20;
+		const count = 24;
+		const colors = getPigeonColors(this.currentMode.id);
+		const particleColors = [colors.body, colors.emissive, colors.ring, 0xffffff];
+
 		for (let i = 0; i < count; i++) {
 			const size = 0.02 + Math.random() * 0.04;
 			const geo = new BoxGeometry(size, size * 0.3, size);
-			const colors = [0xff6600, 0xff8800, 0xffaa00, 0xff4400, 0xffcc00];
 			const mat = new MeshBasicMaterial({
-				color: colors[Math.floor(Math.random() * colors.length)],
+				color: particleColors[Math.floor(Math.random() * particleColors.length)],
 				transparent: true,
 				opacity: 1,
 			});
@@ -935,6 +1250,26 @@ export class GameSystem extends createSystem({
 				maxLifetime: 1.0 + Math.random() * 0.5,
 			});
 		}
+	}
+
+	private spawnPigeonTrail(pos: Vector3, color: number) {
+		const geo = new SphereGeometry(0.02, 4, 4);
+		const mat = new MeshBasicMaterial({
+			color,
+			transparent: true,
+			opacity: 0.4,
+			blending: AdditiveBlending,
+		});
+		const mesh = new Mesh(geo, mat);
+		mesh.position.copy(pos);
+		this.scene.add(mesh);
+
+		this.particles.push({
+			mesh,
+			velocity: new Vector3(0, 0, 0),
+			lifetime: 0,
+			maxLifetime: 0.5,
+		});
 	}
 
 	private spawnTracerHit(from: Vector3, to: Vector3) {
@@ -1157,6 +1492,24 @@ export class GameSystem extends createSystem({
 				});
 				break;
 			}
+			case 'reload': {
+				// Shell racking sound
+				const osc = ctx.createOscillator();
+				osc.type = 'sawtooth';
+				osc.frequency.setValueAtTime(150, now);
+				osc.frequency.exponentialRampToValueAtTime(80, now + 0.1);
+				const gain = ctx.createGain();
+				gain.gain.setValueAtTime(0.15, now);
+				gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+				const filter = ctx.createBiquadFilter();
+				filter.type = 'bandpass';
+				filter.frequency.value = 300;
+				filter.Q.value = 4;
+				osc.connect(filter).connect(gain).connect(this.masterGain!);
+				osc.start(now);
+				osc.stop(now + 0.15);
+				break;
+			}
 		}
 	}
 
@@ -1174,13 +1527,21 @@ export class GameSystem extends createSystem({
 	}
 
 	private updateHUD() {
-		const totalPigeons = this.currentMode.pigeonsPerStation * this.currentMode.stations;
-		const currentPigeonNum = this.currentStation * this.currentMode.pigeonsPerStation + this.currentPigeon + 1;
+		const totalPigeons = this.currentMode.speedMode ? this.speedPigeonsHit : this.currentMode.pigeonsPerStation * this.currentMode.stations;
+		const currentPigeonNum = this.currentMode.speedMode ? this.speedPigeonsHit : this.currentStation * this.currentMode.pigeonsPerStation + this.currentPigeon + 1;
 
 		this.setText('hud', 'score-val', `${this.score}`);
 		this.setText('hud', 'streak-val', `${this.streak}`);
-		this.setText('hud', 'station-val', `${this.currentStation + 1}/${this.currentMode.stations}`);
-		this.setText('hud', 'pigeon-val', `${currentPigeonNum}/${totalPigeons}`);
+		this.setText('hud', 'mode-name', this.currentMode.name);
+
+		if (this.currentMode.speedMode) {
+			this.setText('hud', 'station-val', `Hit: ${this.speedPigeonsHit}`);
+			this.setText('hud', 'pigeon-val', '');
+		} else {
+			this.setText('hud', 'station-val', `Stn ${this.currentStation + 1}/${this.currentMode.stations}`);
+			this.setText('hud', 'pigeon-val', `${currentPigeonNum}/${totalPigeons}`);
+		}
+
 		this.setText('hud', 'hits-val', `${this.hits}`);
 		this.setText('hud', 'misses-val', `${this.misses}`);
 
@@ -1195,12 +1556,28 @@ export class GameSystem extends createSystem({
 			? `Wind: ${this.windX > 0 ? '>' : '<'} ${Math.abs(this.windX).toFixed(1)}`
 			: 'No Wind';
 		this.setText('hud', 'wind-val', windStr);
+
+		// Achievement notification
+		if (this.recentAchievement) {
+			this.setText('hud', 'ach-notify', `Achievement: ${this.recentAchievement}`);
+		} else {
+			this.setText('hud', 'ach-notify', '');
+		}
 	}
 
 	private updateMenuUI() {
 		this.setText('mainMenu', 'total-score', `Total Hits: ${this.saveData.totalHits}`);
 		this.setText('mainMenu', 'total-rounds', `Rounds: ${this.saveData.totalRounds}`);
 		this.setText('mainMenu', 'ach-count', `${this.saveData.achievements.length}/${ACHIEVEMENTS.length}`);
+	}
+
+	private updateModeSelectUI() {
+		// Show best scores for each mode
+		for (const mode of GAME_MODES) {
+			const best = this.saveData.bestScores[mode.id];
+			const bestText = best ? `Best: ${best}` : 'No score yet';
+			this.setText('modeSelect', `best-${mode.id}`, bestText);
+		}
 	}
 
 	private updateScorecardUI() {
@@ -1214,6 +1591,14 @@ export class GameSystem extends createSystem({
 		this.setText('scorecard', 'sc-accuracy', `${accuracy}%`);
 		this.setText('scorecard', 'sc-streak', `${this.bestStreak}`);
 		this.setText('scorecard', 'sc-first-shots', this.allFirstShotsOnly ? 'Yes' : 'No');
+
+		// Show new best indicator
+		const prevBest = this.saveData.bestScores[this.currentMode.id] || 0;
+		if (this.score >= prevBest && prevBest > 0) {
+			this.setText('scorecard', 'sc-record', 'NEW BEST!');
+		} else {
+			this.setText('scorecard', 'sc-record', prevBest > 0 ? `Record: ${prevBest}` : '');
+		}
 	}
 
 	private updateSettingsUI() {
@@ -1225,12 +1610,32 @@ export class GameSystem extends createSystem({
 	}
 
 	private updateAchievementsUI() {
-		for (let i = 0; i < ACHIEVEMENTS.length && i < 20; i++) {
+		const maxShow = Math.min(ACHIEVEMENTS.length, 30);
+		for (let i = 0; i < maxShow; i++) {
 			const ach = ACHIEVEMENTS[i];
 			const unlocked = this.saveData.achievements.includes(ach.id);
 			this.setText('achievements', `ach-${i}-name`, unlocked ? ach.name : '???');
 			this.setText('achievements', `ach-${i}-desc`, unlocked ? ach.description : 'Locked');
 			this.setColor('achievements', `ach-${i}-bg`, unlocked ? '#1a3322' : '#1a1a2e');
+		}
+		this.setText('achievements', 'ach-progress', `${this.saveData.achievements.length}/${ACHIEVEMENTS.length} Unlocked`);
+	}
+
+	private updateStatsUI() {
+		const totalAcc = this.saveData.totalShots > 0
+			? Math.round((this.saveData.totalHits / this.saveData.totalShots) * 100)
+			: 0;
+		this.setText('stats', 'stat-hits', `${this.saveData.totalHits}`);
+		this.setText('stats', 'stat-shots', `${this.saveData.totalShots}`);
+		this.setText('stats', 'stat-accuracy', `${totalAcc}%`);
+		this.setText('stats', 'stat-rounds', `${this.saveData.totalRounds}`);
+		this.setText('stats', 'stat-time', `${Math.round(this.saveData.totalPlayTime)}m`);
+
+		// Best scores per mode
+		for (const mode of GAME_MODES) {
+			const best = this.saveData.bestScores[mode.id] || 0;
+			const bestStreak = this.saveData.bestStreaks[mode.id] || 0;
+			this.setText('stats', `stat-best-${mode.id}`, `${best} (${bestStreak} streak)`);
 		}
 	}
 
@@ -1257,6 +1662,10 @@ export class GameSystem extends createSystem({
 		this.saveData.achievements.push(id);
 		this.saveSave();
 		this.playSound('achievement');
+
+		// Show notification
+		this.recentAchievement = ach.name;
+		this.recentAchTimer = 3.0;
 	}
 
 	private checkTotalAchievements() {
@@ -1265,6 +1674,7 @@ export class GameSystem extends createSystem({
 		if (total >= 100) this.checkAchievement('total_100');
 		if (total >= 250) this.checkAchievement('total_250');
 		if (total >= 500) this.checkAchievement('total_500');
+		if (total >= 1000) this.checkAchievement('total_1000');
 	}
 
 	// ===== Save/Load =====
@@ -1279,7 +1689,7 @@ export class GameSystem extends createSystem({
 		} catch (_e) { /* ignore */ }
 	}
 
-	// ===== Mouse Listeners =====
+	// ===== Input Listeners =====
 	private setupMouseListeners() {
 		const canvas = this.renderer.domElement;
 		canvas.addEventListener('mousedown', (e: MouseEvent) => {
@@ -1292,6 +1702,42 @@ export class GameSystem extends createSystem({
 			this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
 			this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 		});
+		// Prevent context menu on right-click
+		canvas.addEventListener('contextmenu', (e: Event) => e.preventDefault());
+	}
+
+	private setupKeyboardListeners() {
+		window.addEventListener('keydown', (e: KeyboardEvent) => {
+			if (this.keyboardState.get(e.code)) return; // prevent key repeat
+			this.keyboardState.set(e.code, true);
+
+			switch (e.code) {
+				case 'Space':
+				case 'KeyF':
+					if (this.phase === 'playing') {
+						if (this.waitingForPull) {
+							this.launchPigeon();
+							this.playSound('pull');
+						}
+					}
+					break;
+				case 'Escape':
+					if (this.phase === 'playing') {
+						this.showPanel('menu');
+					} else if (this.phase !== 'menu') {
+						this.showPanel('menu');
+					}
+					break;
+				case 'KeyR':
+					if (this.phase === 'round_end' || this.phase === 'game_over') {
+						this.selectMode(this.currentMode);
+					}
+					break;
+			}
+		});
+		window.addEventListener('keyup', (e: KeyboardEvent) => {
+			this.keyboardState.set(e.code, false);
+		});
 	}
 
 	// ===== Main Update Loop =====
@@ -1303,7 +1749,12 @@ export class GameSystem extends createSystem({
 		this.updatePigeons(delta);
 		this.updateParticles(delta);
 		this.updateTracers(delta);
+		this.updateFloatingTexts(delta);
 		this.updateTrapHouseGlow(time);
+		this.updateCrosshair(delta, time);
+		this.updateWindArrow(time);
+		this.updateAtmosphere(time);
+		this.updateAchievementNotify(delta);
 
 		// Handle input
 		this.handleInput();
@@ -1326,11 +1777,19 @@ export class GameSystem extends createSystem({
 			}
 		}
 
+		// Left trigger also shoots
+		if (leftPad?.getButtonDown(InputComponent.Trigger)) {
+			if (this.phase === 'playing') {
+				this.tryShoot();
+			}
+		}
+
 		// A button for pull (alternative)
 		if (rightPad?.getButtonDown(InputComponent.A_Button) ||
 			leftPad?.getButtonDown(InputComponent.A_Button)) {
 			if (this.phase === 'playing' && this.waitingForPull) {
 				this.launchPigeon();
+				this.playSound('pull');
 			}
 		}
 
@@ -1339,6 +1798,14 @@ export class GameSystem extends createSystem({
 			leftPad?.getButtonDown(InputComponent.B_Button)) {
 			if (this.phase === 'playing') {
 				this.showPanel('menu');
+			}
+		}
+
+		// Y button for retry from scorecard
+		if (rightPad?.getButtonDown(InputComponent.Y_Button) ||
+			leftPad?.getButtonDown(InputComponent.Y_Button)) {
+			if (this.phase === 'round_end' || this.phase === 'game_over') {
+				this.selectMode(this.currentMode);
 			}
 		}
 	}
@@ -1354,6 +1821,13 @@ export class GameSystem extends createSystem({
 			this.speedTimer -= delta;
 			if (this.speedTimer <= 0) {
 				this.speedTimer = 0;
+				// Check quick draw achievement before ending
+				if (!this.speed30sTracked) {
+					this.speed30sTracked = true;
+					if (this.speed30sHits >= 10) {
+						this.checkAchievement('speed_30s_10');
+					}
+				}
 				this.endRound();
 				return;
 			}
@@ -1379,6 +1853,7 @@ export class GameSystem extends createSystem({
 
 	private updatePigeons(delta: number) {
 		const toRemove: ActivePigeon[] = [];
+		const colors = getPigeonColors(this.currentMode.id);
 
 		for (const pigeon of this.pigeons) {
 			pigeon.lifetime += delta;
@@ -1396,6 +1871,13 @@ export class GameSystem extends createSystem({
 				// Spin the pigeon
 				pigeon.group.rotation.y += delta * 5;
 				pigeon.group.rotation.x += delta * 2;
+
+				// Trail particles
+				pigeon.trailTimer += delta;
+				if (pigeon.trailTimer >= 0.05) {
+					pigeon.trailTimer = 0;
+					this.spawnPigeonTrail(pigeon.group.position.clone(), colors.emissive);
+				}
 
 				// Check if out of bounds or lifetime exceeded
 				if (pigeon.lifetime > pigeon.maxLifetime ||
@@ -1481,11 +1963,106 @@ export class GameSystem extends createSystem({
 		}
 	}
 
+	private updateFloatingTexts(delta: number) {
+		const toRemove: number[] = [];
+
+		for (let i = 0; i < this.floatingTexts.length; i++) {
+			const ft = this.floatingTexts[i];
+			ft.lifetime += delta;
+
+			if (ft.lifetime >= ft.maxLifetime) {
+				toRemove.push(i);
+				continue;
+			}
+
+			const t = ft.lifetime / ft.maxLifetime;
+			ft.group.position.y += delta * 2; // Float upward
+
+			// Scale up and fade
+			const scale = 1 + t * 1.5;
+			ft.group.scale.setScalar(scale);
+
+			// Fade children
+			ft.group.children.forEach(child => {
+				const mat = (child as Mesh).material as MeshBasicMaterial;
+				if (mat) mat.opacity = 1 - t;
+			});
+
+			// Face camera
+			const ring = ft.group.children[0] as Mesh;
+			if (ring) ring.lookAt(this.camera.position);
+		}
+
+		for (let i = toRemove.length - 1; i >= 0; i--) {
+			const idx = toRemove[i];
+			this.scene.remove(this.floatingTexts[idx].group);
+			this.floatingTexts.splice(idx, 1);
+		}
+	}
+
 	private updateTrapHouseGlow(time: number) {
 		for (const house of this.trapHouseEntities) {
 			const slot = house.children[1] as Mesh;
 			if (slot && slot.material instanceof MeshStandardMaterial) {
 				slot.material.emissiveIntensity = 0.4 + Math.sin(time * 3) * 0.2;
+			}
+		}
+	}
+
+	private updateCrosshair(delta: number, _time: number) {
+		if (!this.crosshairGroup) return;
+
+		// Pulse effect on shoot
+		if (this.crosshairPulse > 0) {
+			this.crosshairPulse -= delta;
+			const scale = 1 + this.crosshairPulse * 2;
+			this.crosshairGroup.scale.setScalar(scale);
+		} else {
+			this.crosshairGroup.scale.setScalar(1);
+		}
+
+		// Color change based on cooldown
+		const ring = this.crosshairGroup.children[0] as Mesh;
+		if (ring && ring.material instanceof MeshBasicMaterial) {
+			if (this.cooldownTimer > 0) {
+				ring.material.color.setHex(0x666666);
+			} else {
+				ring.material.color.setHex(0xff4400);
+			}
+		}
+	}
+
+	private updateWindArrow(time: number) {
+		if (!this.windArrow || !this.windArrow.visible) return;
+		// Gentle bob
+		this.windArrow.position.y = 0.3 + Math.sin(time * 2) * 0.03;
+		// Slight opacity pulse on shaft
+		const shaft = this.windArrow.children[0] as Mesh;
+		if (shaft && shaft.material instanceof MeshBasicMaterial) {
+			shaft.material.opacity = 0.4 + Math.sin(time * 3) * 0.1;
+		}
+	}
+
+	private updateAtmosphere(time: number) {
+		// Animate floating dust particles
+		for (const child of this.environmentGroup.children) {
+			if (child.userData && child.userData['floatSpeed']) {
+				const speed = child.userData['floatSpeed'] as number;
+				const offset = child.userData['floatOffset'] as number;
+				child.position.y += Math.sin(time * speed + offset) * 0.001;
+				child.position.x += Math.cos(time * speed * 0.5 + offset) * 0.0005;
+			}
+		}
+	}
+
+	private updateAchievementNotify(delta: number) {
+		if (this.recentAchTimer > 0) {
+			this.recentAchTimer -= delta;
+			if (this.recentAchTimer <= 0) {
+				this.recentAchievement = null;
+				if (this.phase === 'playing') {
+					this.setText('hud', 'ach-notify', '');
+				}
 			}
 		}
 	}

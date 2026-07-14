@@ -2,13 +2,13 @@
   <style>
     .root {
       width: 550;
-      height: 600;
+      height: 650;
       background-color: rgba(5, 5, 20, 0.95);
       border-radius: 16;
       padding: 20;
       flex-direction: column;
       align-items: center;
-      gap: 6;
+      gap: 5;
       border-color: #ffaa00;
       border-width: 2;
       overflow: scroll;
@@ -18,20 +18,24 @@
       color: #ffaa00;
       font-weight: bold;
     }
+    .progress {
+      font-size: 14;
+      color: #888899;
+    }
     .ach-item {
       width: 480;
       flex-direction: column;
-      padding: 8;
+      padding: 6;
       border-radius: 6;
       background-color: #1a1a2e;
     }
     .ach-name {
-      font-size: 16;
+      font-size: 15;
       color: #ffcc00;
       font-weight: bold;
     }
     .ach-desc {
-      font-size: 12;
+      font-size: 11;
       color: #888899;
     }
     .back-btn {
@@ -44,7 +48,7 @@
       border-color: #666688;
       border-width: 1;
       cursor: pointer;
-      margin-top: 8;
+      margin-top: 6;
     }
     .back-text {
       font-size: 16;
@@ -53,6 +57,7 @@
   </style>
   <container class="root">
     <text class="title">ACHIEVEMENTS</text>
+    <text class="progress" name="ach-progress">0/30 Unlocked</text>
     <container class="ach-item" name="ach-0-bg"><text class="ach-name" name="ach-0-name">???</text><text class="ach-desc" name="ach-0-desc">Locked</text></container>
     <container class="ach-item" name="ach-1-bg"><text class="ach-name" name="ach-1-name">???</text><text class="ach-desc" name="ach-1-desc">Locked</text></container>
     <container class="ach-item" name="ach-2-bg"><text class="ach-name" name="ach-2-name">???</text><text class="ach-desc" name="ach-2-desc">Locked</text></container>
@@ -73,6 +78,16 @@
     <container class="ach-item" name="ach-17-bg"><text class="ach-name" name="ach-17-name">???</text><text class="ach-desc" name="ach-17-desc">Locked</text></container>
     <container class="ach-item" name="ach-18-bg"><text class="ach-name" name="ach-18-name">???</text><text class="ach-desc" name="ach-18-desc">Locked</text></container>
     <container class="ach-item" name="ach-19-bg"><text class="ach-name" name="ach-19-name">???</text><text class="ach-desc" name="ach-19-desc">Locked</text></container>
+    <container class="ach-item" name="ach-20-bg"><text class="ach-name" name="ach-20-name">???</text><text class="ach-desc" name="ach-20-desc">Locked</text></container>
+    <container class="ach-item" name="ach-21-bg"><text class="ach-name" name="ach-21-name">???</text><text class="ach-desc" name="ach-21-desc">Locked</text></container>
+    <container class="ach-item" name="ach-22-bg"><text class="ach-name" name="ach-22-name">???</text><text class="ach-desc" name="ach-22-desc">Locked</text></container>
+    <container class="ach-item" name="ach-23-bg"><text class="ach-name" name="ach-23-name">???</text><text class="ach-desc" name="ach-23-desc">Locked</text></container>
+    <container class="ach-item" name="ach-24-bg"><text class="ach-name" name="ach-24-name">???</text><text class="ach-desc" name="ach-24-desc">Locked</text></container>
+    <container class="ach-item" name="ach-25-bg"><text class="ach-name" name="ach-25-name">???</text><text class="ach-desc" name="ach-25-desc">Locked</text></container>
+    <container class="ach-item" name="ach-26-bg"><text class="ach-name" name="ach-26-name">???</text><text class="ach-desc" name="ach-26-desc">Locked</text></container>
+    <container class="ach-item" name="ach-27-bg"><text class="ach-name" name="ach-27-name">???</text><text class="ach-desc" name="ach-27-desc">Locked</text></container>
+    <container class="ach-item" name="ach-28-bg"><text class="ach-name" name="ach-28-name">???</text><text class="ach-desc" name="ach-28-desc">Locked</text></container>
+    <container class="ach-item" name="ach-29-bg"><text class="ach-name" name="ach-29-name">???</text><text class="ach-desc" name="ach-29-desc">Locked</text></container>
     <container class="back-btn" name="btn-back-ach">
       <text class="back-text">BACK</text>
     </container>

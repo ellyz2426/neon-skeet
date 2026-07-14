@@ -42,11 +42,6 @@
       color: #ff4400;
       font-weight: bold;
     }
-    .pull-text {
-      font-size: 24;
-      color: #00ff88;
-      font-weight: bold;
-    }
     .wind-text {
       font-size: 12;
       color: #666688;
@@ -63,8 +58,18 @@
       font-size: 14;
       color: #ff4444;
     }
+    .mode-label {
+      font-size: 12;
+      color: #555577;
+    }
+    .ach-text {
+      font-size: 13;
+      color: #ffcc00;
+      font-weight: bold;
+    }
   </style>
   <container class="root">
+    <text class="mode-label" name="mode-name">Trap</text>
     <container class="top-row">
       <container>
         <text class="score-label">SCORE</text>
@@ -85,5 +90,6 @@
       <text class="miss-text" name="misses-val">Misses: 0</text>
     </container>
     <text class="wind-text" name="wind-val">No Wind</text>
+    <text class="ach-text" name="ach-notify"></text>
   </container>
 </panel>

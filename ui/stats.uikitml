@@ -1,0 +1,123 @@
+<panel>
+  <style>
+    .root {
+      width: 550;
+      height: 600;
+      background-color: rgba(5, 5, 20, 0.95);
+      border-radius: 16;
+      padding: 24;
+      flex-direction: column;
+      align-items: center;
+      gap: 10;
+      border-color: #00ccff;
+      border-width: 2;
+      overflow: scroll;
+    }
+    .title {
+      font-size: 32;
+      color: #00ccff;
+      font-weight: bold;
+    }
+    .section {
+      font-size: 18;
+      color: #ff8800;
+      font-weight: bold;
+      margin-top: 8;
+    }
+    .row {
+      width: 460;
+      flex-direction: row;
+      justify-content: space-between;
+      padding-left: 10;
+      padding-right: 10;
+    }
+    .label {
+      font-size: 16;
+      color: #888899;
+    }
+    .value {
+      font-size: 16;
+      color: #ffffff;
+      font-weight: bold;
+    }
+    .mode-row {
+      width: 460;
+      flex-direction: row;
+      justify-content: space-between;
+      padding-left: 10;
+      padding-right: 10;
+    }
+    .mode-label {
+      font-size: 14;
+      color: #666688;
+    }
+    .mode-val {
+      font-size: 14;
+      color: #aaaacc;
+    }
+    .back-btn {
+      width: 200;
+      height: 44;
+      background-color: #1a1a3e;
+      border-radius: 8;
+      justify-content: center;
+      align-items: center;
+      border-color: #666688;
+      border-width: 1;
+      cursor: pointer;
+      margin-top: 10;
+    }
+    .back-text {
+      font-size: 18;
+      color: #888899;
+    }
+  </style>
+  <container class="root">
+    <text class="title">STATISTICS</text>
+    <text class="section">Overall</text>
+    <container class="row">
+      <text class="label">Total Hits</text>
+      <text class="value" name="stat-hits">0</text>
+    </container>
+    <container class="row">
+      <text class="label">Total Shots</text>
+      <text class="value" name="stat-shots">0</text>
+    </container>
+    <container class="row">
+      <text class="label">Accuracy</text>
+      <text class="value" name="stat-accuracy">0%</text>
+    </container>
+    <container class="row">
+      <text class="label">Rounds Completed</text>
+      <text class="value" name="stat-rounds">0</text>
+    </container>
+    <container class="row">
+      <text class="label">Play Time</text>
+      <text class="value" name="stat-time">0m</text>
+    </container>
+    <text class="section">Best Scores (Streak)</text>
+    <container class="mode-row">
+      <text class="mode-label">Trap</text>
+      <text class="mode-val" name="stat-best-trap">0 (0 streak)</text>
+    </container>
+    <container class="mode-row">
+      <text class="mode-label">Double Trap</text>
+      <text class="mode-val" name="stat-best-double_trap">0 (0 streak)</text>
+    </container>
+    <container class="mode-row">
+      <text class="mode-label">Skeet</text>
+      <text class="mode-val" name="stat-best-skeet">0 (0 streak)</text>
+    </container>
+    <container class="mode-row">
+      <text class="mode-label">Speed Round</text>
+      <text class="mode-val" name="stat-best-speed">0 (0 streak)</text>
+    </container>
+    <container class="mode-row">
+      <text class="mode-label">Sporting Clays</text>
+      <text class="mode-val" name="stat-best-sporting">0 (0 streak)</text>
+    </container>
+    <container class="back-btn" name="btn-back-stats">
+      <text class="back-text">BACK</text>
+    </container>
+  </container>
+</panel>

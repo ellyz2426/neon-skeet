@@ -89,33 +89,53 @@ export interface Achievement {
 }
 
 export const ACHIEVEMENTS: Achievement[] = [
+	// Basic progression
 	{ id: 'first_hit', name: 'First Blood', description: 'Hit your first clay pigeon', condition: 'totalHits >= 1' },
 	{ id: 'perfect_station', name: 'Clean Station', description: 'Hit every target at one station', condition: 'perfectStation' },
 	{ id: 'perfect_round', name: 'Perfect Round', description: 'Hit every target in a full round', condition: 'perfectRound' },
+	// Streaks
 	{ id: 'streak_5', name: 'Hot Streak', description: 'Hit 5 targets in a row', condition: 'streak >= 5' },
 	{ id: 'streak_10', name: 'On Fire', description: 'Hit 10 targets in a row', condition: 'streak >= 10' },
 	{ id: 'streak_25', name: 'Untouchable', description: 'Hit 25 targets in a row', condition: 'streak >= 25' },
+	// Total hits
 	{ id: 'total_50', name: 'Sharpshooter', description: 'Hit 50 total targets', condition: 'totalHits >= 50' },
 	{ id: 'total_100', name: 'Marksman', description: 'Hit 100 total targets', condition: 'totalHits >= 100' },
 	{ id: 'total_250', name: 'Expert Marksman', description: 'Hit 250 total targets', condition: 'totalHits >= 250' },
 	{ id: 'total_500', name: 'Master Shooter', description: 'Hit 500 total targets', condition: 'totalHits >= 500' },
+	// Speed mode
 	{ id: 'speed_20', name: 'Speed Demon', description: 'Hit 20+ targets in Speed Round', condition: 'speedHits >= 20' },
 	{ id: 'speed_40', name: 'Lightning Reflexes', description: 'Hit 40+ targets in Speed Round', condition: 'speedHits >= 40' },
+	// Doubles
 	{ id: 'double_ace', name: 'Double Ace', description: 'Hit both targets in 5 consecutive doubles', condition: 'doubleStreak >= 5' },
+	// Skill-based
 	{ id: 'one_shot', name: 'One Shot Wonder', description: 'Complete a round using only first shots', condition: 'allFirstShots' },
 	{ id: 'all_modes', name: 'Versatile', description: 'Complete a round in every mode', condition: 'allModesPlayed' },
+	// Score
 	{ id: 'score_1000', name: 'High Roller', description: 'Score over 1000 in a single round', condition: 'roundScore >= 1000' },
 	{ id: 'score_2500', name: 'Grand Master', description: 'Score over 2500 in a single round', condition: 'roundScore >= 2500' },
+	{ id: 'score_5000', name: 'Score Legend', description: 'Score over 5000 in a single round', condition: 'roundScore >= 5000' },
+	// Rounds
 	{ id: 'rounds_10', name: 'Dedicated', description: 'Complete 10 rounds', condition: 'roundsCompleted >= 10' },
 	{ id: 'rounds_25', name: 'Veteran', description: 'Complete 25 rounds', condition: 'roundsCompleted >= 25' },
+	{ id: 'rounds_50', name: 'Range Regular', description: 'Complete 50 rounds', condition: 'roundsCompleted >= 50' },
+	// Difficulty mastery
 	{ id: 'hard_perfect', name: 'True Marksman', description: 'Perfect round on Hard difficulty', condition: 'hardPerfect' },
+	{ id: 'expert_perfect', name: 'Legendary Shot', description: 'Perfect round on Expert difficulty', condition: 'expertPerfect' },
+	{ id: 'expert_score_3000', name: 'Expert Elite', description: 'Score 3000+ on Expert difficulty', condition: 'expertScore3000' },
+	// Special
+	{ id: 'wind_master', name: 'Wind Master', description: 'Perfect round with wind active', condition: 'windPerfect' },
+	{ id: 'no_miss_streak_15', name: 'Precision Machine', description: 'Go 15 shots without missing (no pigeon escapes)', condition: 'noMissStreak15' },
+	{ id: 'skeet_all_stations', name: 'Full Circuit', description: 'Hit first target at every skeet station', condition: 'skeetFullCircuit' },
+	{ id: 'sporting_sweep', name: 'Field Sweep', description: 'Perfect round of Sporting Clays', condition: 'sportingSweep' },
+	{ id: 'speed_30s_10', name: 'Quick Draw', description: 'Hit 10 targets in first 30s of Speed Round', condition: 'quickDraw' },
+	{ id: 'total_1000', name: 'Clay Destroyer', description: 'Hit 1000 total targets', condition: 'totalHits >= 1000' },
+	{ id: 'double_clean', name: 'Doubles Dominator', description: 'Perfect round of Double Trap', condition: 'doubleClean' },
 ];
 
 // Station positions for each mode
 export function getStationPositions(modeId: string): { x: number; z: number; angle: number }[] {
 	switch (modeId) {
 		case 'trap':
-			// 5 stations in an arc behind the trap house
 			return [
 				{ x: -4, z: 0, angle: 0 },
 				{ x: -2, z: 0.5, angle: 0.15 },
@@ -132,7 +152,6 @@ export function getStationPositions(modeId: string): { x: number; z: number; ang
 				{ x: 4, z: 0, angle: 0 },
 			];
 		case 'skeet':
-			// 8 stations in semicircle between two houses
 			return Array.from({ length: 8 }, (_, i) => {
 				const t = i / 7;
 				const angle = Math.PI * 0.15 + t * Math.PI * 0.7;
@@ -161,14 +180,13 @@ export function getStationPositions(modeId: string): { x: number; z: number; ang
 // Pigeon launch configs per mode/station
 export function getLaunchConfig(modeId: string, stationIdx: number): {
 	origin: { x: number; y: number; z: number };
-	angleH: number; // horizontal angle variance
-	angleV: number; // vertical launch angle
-	speed: number; // multiplier
+	angleH: number;
+	angleV: number;
+	speed: number;
 }[] {
 	switch (modeId) {
 		case 'trap':
 		case 'double_trap':
-			// Single trap house ahead
 			return [{
 				origin: { x: 0, y: 0.3, z: -15 },
 				angleH: (Math.random() - 0.5) * 0.8,
@@ -176,7 +194,6 @@ export function getLaunchConfig(modeId: string, stationIdx: number): {
 				speed: 1.0,
 			}];
 		case 'skeet': {
-			// High house (left) and low house (right)
 			const configs = [];
 			if (stationIdx < 4 || stationIdx === 7) {
 				configs.push({
@@ -197,7 +214,6 @@ export function getLaunchConfig(modeId: string, stationIdx: number): {
 			return configs;
 		}
 		case 'speed':
-			// Random directions, increasing speed
 			return [{
 				origin: {
 					x: (Math.random() - 0.5) * 16,
@@ -209,7 +225,6 @@ export function getLaunchConfig(modeId: string, stationIdx: number): {
 				speed: 1.0,
 			}];
 		case 'sporting':
-			// Varied trajectories per station
 			return [{
 				origin: {
 					x: (Math.random() - 0.5) * 20,
@@ -227,5 +242,17 @@ export function getLaunchConfig(modeId: string, stationIdx: number): {
 				angleV: 0.35,
 				speed: 1.0,
 			}];
+	}
+}
+
+// Pigeon color palette by mode
+export function getPigeonColors(modeId: string): { body: number; emissive: number; ring: number } {
+	switch (modeId) {
+		case 'trap': return { body: 0xff6600, emissive: 0xff4400, ring: 0xffaa00 };
+		case 'double_trap': return { body: 0xff0088, emissive: 0xcc0066, ring: 0xff66aa };
+		case 'skeet': return { body: 0x00ccff, emissive: 0x0088cc, ring: 0x66ddff };
+		case 'speed': return { body: 0x00ff88, emissive: 0x00cc66, ring: 0x66ffbb };
+		case 'sporting': return { body: 0xaa00ff, emissive: 0x8800cc, ring: 0xcc66ff };
+		default: return { body: 0xff6600, emissive: 0xff4400, ring: 0xffaa00 };
 	}
 }

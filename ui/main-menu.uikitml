@@ -22,7 +22,7 @@
     }
     .btn {
       width: 320;
-      height: 56;
+      height: 52;
       background-color: #1a1a3e;
       border-radius: 10;
       justify-content: center;
@@ -37,14 +37,35 @@
       color: #00ccff;
       font-weight: bold;
     }
+    .btn-small {
+      width: 320;
+      height: 44;
+      background-color: #1a1a3e;
+      border-radius: 8;
+      justify-content: center;
+      align-items: center;
+      border-color: #555577;
+      border-width: 1;
+      cursor: pointer;
+      hover-background-color: #2a2a5e;
+    }
+    .btn-text-sm {
+      font-size: 18;
+      color: #888899;
+    }
     .stats-row {
       flex-direction: row;
       gap: 20;
-      margin-top: 10;
+      margin-top: 6;
     }
     .stat {
       font-size: 14;
       color: #666688;
+    }
+    .controls-hint {
+      font-size: 11;
+      color: #444466;
+      margin-top: 4;
     }
   </style>
   <container class="root">
@@ -53,16 +74,20 @@
     <container class="btn" name="btn-play">
       <text class="btn-text">PLAY</text>
     </container>
-    <container class="btn" name="btn-settings">
-      <text class="btn-text">SETTINGS</text>
+    <container class="btn-small" name="btn-achievements">
+      <text class="btn-text-sm">ACHIEVEMENTS</text>
     </container>
-    <container class="btn" name="btn-achievements">
-      <text class="btn-text">ACHIEVEMENTS</text>
+    <container class="btn-small" name="btn-stats">
+      <text class="btn-text-sm">STATISTICS</text>
+    </container>
+    <container class="btn-small" name="btn-settings">
+      <text class="btn-text-sm">SETTINGS</text>
     </container>
     <container class="stats-row">
       <text class="stat" name="total-score">Total Hits: 0</text>
       <text class="stat" name="total-rounds">Rounds: 0</text>
-      <text class="stat" name="ach-count">0/20</text>
+      <text class="stat" name="ach-count">0/30</text>
     </container>
+    <text class="controls-hint">Click/Trigger: Shoot | Space/A: Pull | Esc/B: Menu</text>
   </container>
 </panel>
